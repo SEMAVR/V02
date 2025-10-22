@@ -194,6 +194,12 @@ button:active {
   animation: pulse 2s infinite;
 }
 
+.led-timeout .led-indicator {
+    background-color: #ff9800;
+    color: #ff9800;
+    animation: blink 0.5s infinite;
+}
+
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.3; }
