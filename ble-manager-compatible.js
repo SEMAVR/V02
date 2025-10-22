@@ -124,24 +124,27 @@ class BLEManager {
         }
     }
 
-    async setLed(state) {
-        if (!this.ledCharacteristic || !this.isConnected) {
-            alert('Сначала подключитесь к устройству');
-            return;
-        }
-
-        try {
-            const command = state ? 1 : 0;
-            const value = new Uint8Array([command]);
-            await this.ledCharacteristic.writeValue(value);
-            console.log('💡 Команда LED отправлена:', command);
-            
-            this.updateLedIndicator(command);
-            
-        } catch (error) {
-            console.error('Ошибка управления LED:', error);
-        }
+    async setLed(beaconId, state) {
+    if (!this.ledCharacteristic || !this.isConnected) {
+        alert('Сначала подключитесь к устройству');
+        return;
     }
+
+    try {
+        const command = state ? 1 : 0;
+        
+        // РАСШИРЕННЫЙ ПРОТОКОЛ: 2 байта [beacon_id, command]
+        const value = new Uint8Array([beaconId, command]);
+        await this.ledCharacteristic.writeValue(value);
+        
+        console.log('💡 Команда LED отправлена:', {beaconId, command});
+        
+        this.updateLedIndicator(command);
+        
+    } catch (error) {
+        console.error('Ошибка управления LED:', error);
+    }
+}
 
     disconnect() {
         if (this.device && this.device.gatt.connected) {
