@@ -4,12 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Маяк Finder</title>
-  
-  <link rel="icon" href="icon-192.png" sizes="192x192">
-  <link rel="icon" href="icon-512.png" sizes="512x512">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  
+  <title>Многомаяковый Finder</title>
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -17,63 +12,86 @@
 </head>
 <body>
   <header>
-    <h1>🔎 Маяк Finder</h1>
+    <h1>🔎 Многомаяковый Finder</h1>
     <button id="settingsBtn">⚙️</button>
   </header>
 
   <main>
     <div id="map"></div>
 
-   <div id="dataPanel">
-  <!-- Координаты маяка в одной строке -->
-  <div class="compact-data-row">
-    <div class="compact-data-item">
-      <span class="compact-data-label">Координаты маяка:</span>
-      <span class="compact-data-value" id="beaconCoords">N/A</span>
+    <div id="dataPanel">
+      <!-- Выбор активного маяка -->
+      <div class="beacon-selector">
+        <span class="compact-data-label">Активный маяк:</span>
+        <select id="beaconSelect">
+          <option value="0">🔴 Маяк 0</option>
+          <option value="1">🟢 Маяк 1</option>
+          <option value="2">🔵 Маяк 2</option>
+          <option value="3">🟡 Маяк 3</option>
+          <option value="4">🟣 Маяк 4</option>
+          <option value="5">🟠 Маяк 5</option>
+          <option value="6">⚫ Маяк 6</option>
+          <option value="7">⚪ Маяк 7</option>
+        </select>
+      </div>
+      
+      <!-- Данные активного маяка -->
+      <div class="compact-data-row">
+        <div class="compact-data-item">
+          <span class="compact-data-label">Координаты:</span>
+          <span class="compact-data-value" id="beaconCoords">N/A</span>
+        </div>
+      </div>
+      
+      <div class="compact-data-row">
+        <div class="compact-data-item">
+          <span class="compact-data-label">Моё местоположение:</span>
+          <span class="compact-data-value" id="myCoords">N/A</span>
+        </div>
+        <div class="compact-data-item">
+          <span class="compact-data-label">Расстояние:</span>
+          <span class="compact-data-value" id="distance">N/A</span>
+        </div>
+        <div class="compact-data-item">
+          <span class="compact-data-label">Скорость:</span>
+          <span class="compact-data-value" id="speed">N/A</span>
+        </div>
+      </div>
+      
+      <!-- Статус LED активного маяка -->
+      <div class="compact-data-row">
+        <div class="compact-data-item">
+          <span class="compact-data-label">Статус LED:</span>
+          <span class="compact-data-value" id="ledStatus">❓ Неизвестно</span>
+        </div>
+      </div>
+
+      <!-- Статус всех маяков -->
+      <div class="beacons-status">
+        <div class="compact-data-label">Статус маяков:</div>
+        <div id="beaconsStatus" class="beacons-grid">
+          <!-- Заполняется JavaScript -->
+        </div>
+      </div>
     </div>
-  </div>
-  
-  <div class="compact-data-row">
-    <div class="compact-data-item">
-      <span class="compact-data-label">Моё местоположение:</span>
-      <span class="compact-data-value" id="myCoords">N/A</span>
-    </div>
-    <div class="compact-data-item">
-      <span class="compact-data-label">Расстояние:</span>
-      <span class="compact-data-value" id="distance">N/A</span>
-    </div>
-    <div class="compact-data-item">
-      <span class="compact-data-label">Скорость:</span>
-      <span class="compact-data-value" id="speed">N/A</span>
-    </div>
-  </div>
-  
-  <!-- Статус LED в одной строке -->
-  <div class="compact-data-row">
-    <div class="compact-data-item">
-      <span class="compact-data-label">Статус LED на маяке:</span>
-      <span class="compact-data-value" id="ledStatus">❓ Неизвестно</span>
-    </div>
-  </div>
-</div>
 
     <div class="controls">
-  <button id="connectBtn">🔗 Подключить BLE</button>
-  
-  <!-- LED кнопки в одной строке -->
-  <div class="button-row">
-    <button id="ledOnBtn">💡 LED Вкл</button>
-    <button id="ledOffBtn">💤 LED Выкл</button>
-  </div>
-  
-  <!-- История и Очистить историю в одной строке -->
-  <div class="button-row">
-    <button id="historyBtn">📜 История</button>
-    <button id="clearHistoryBtn">🗑️ Очистить</button>
-  </div>
-  
-  <button id="openBtn">🌍 Открыть в картах</button>
-</div>
+      <button id="connectBtn">🔗 Подключить BLE</button>
+      
+      <!-- Управление LED -->
+      <div class="button-row">
+        <button id="ledOnBtn">💡 LED Вкл</button>
+        <button id="ledOffBtn">💤 LED Выкл</button>
+      </div>
+      
+      <!-- История и очистка -->
+      <div class="button-row">
+        <button id="historyBtn">📜 История</button>
+        <button id="clearHistoryBtn">🗑️ Очистить</button>
+      </div>
+      
+      <button id="openBtn">🌍 Открыть в картах</button>
+    </div>
   </main>
 
   <!-- Модальные окна -->
@@ -104,16 +122,31 @@
   </div>
 
   <div id="historyModal" class="modal hidden">
-  <h2>📜 История координат</h2>
-  <div id="historyListContainer" style="max-height: 300px; overflow-y: auto; margin: 10px 0;">
-    <ul id="historyList"></ul>
+    <h2>📜 История координат</h2>
+    <div style="margin: 10px 0;">
+      <label>Маяк: 
+        <select id="historyBeaconSelect">
+          <option value="all">Все маяки</option>
+          <option value="0">Маяк 0</option>
+          <option value="1">Маяк 1</option>
+          <option value="2">Маяк 2</option>
+          <option value="3">Маяк 3</option>
+          <option value="4">Маяк 4</option>
+          <option value="5">Маяк 5</option>
+          <option value="6">Маяк 6</option>
+          <option value="7">Маяк 7</option>
+        </select>
+      </label>
+    </div>
+    <div id="historyListContainer" style="max-height: 300px; overflow-y: auto; margin: 10px 0;">
+      <ul id="historyList"></ul>
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+      <button id="exportGPX">⬇️ Экспорт GPX</button>
+      <button id="exportCSV">⬇️ Экспорт CSV</button>
+    </div>
+    <button id="closeHistory" style="margin-top: 10px; width: 100%;">Закрыть</button>
   </div>
-  <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-    <button id="exportGPX">⬇️ Экспорт GPX</button>
-    <button id="exportCSV">⬇️ Экспорт CSV</button>
-  </div>
-  <button id="closeHistory" style="margin-top: 10px; width: 100%;">Закрыть</button>
-</div>
 
   <div id="openModal" class="modal hidden">
     <h2>🌍 Открыть в приложении</h2>
