@@ -7,6 +7,8 @@ class BLEManager {
         this.ledCharacteristic = null;
         this.isConnected = false;
         this.lastLedState = null;
+        this.pendingCommands = new Map(); // Для отслеживания отправленных команд
+        this.commandTimeout = 10000; // 10 секунд таймаут для команды
     }
 
     async connect() {
@@ -83,6 +85,9 @@ class BLEManager {
             const speed = parseFloat(parts[3]);
             const ledState = parseInt(parts[4]);
             
+            // Проверяем pending команды
+            this.checkPendingCommand(beaconId, ledState);
+            
             // Сохраняем состояние LED
             this.lastLedState = ledState;
             
@@ -99,11 +104,37 @@ class BLEManager {
         }
     }
 
-    updateLedIndicator(ledState) {
+    // Проверка pending команд
+    checkPendingCommand(beaconId, actualLedState) {
+        const commandKey = `beacon_${beaconId}`;
+        if (this.pendingCommands.has(commandKey)) {
+            const pendingCommand = this.pendingCommands.get(commandKey);
+            const timeDiff = Date.now() - pendingCommand.timestamp;
+            
+            if (actualLedState === pendingCommand.command) {
+                // Команда успешно выполнена
+                console.log(`✅ Команда для маяка ${beaconId} подтверждена`);
+                this.pendingCommands.delete(commandKey);
+            } else if (timeDiff > this.commandTimeout) {
+                // Таймаут команды
+                console.log(`❌ Таймаут команды для маяка ${beaconId}`);
+                this.pendingCommands.delete(commandKey);
+                this.updateLedIndicator(0, true); // Сбрасываем индикатор
+            }
+        }
+    }
+
+    updateLedIndicator(ledState, isTimeout = false) {
         const ledStatusElement = document.getElementById("ledStatus");
         if (!ledStatusElement) return;
         
         ledStatusElement.className = 'led-status';
+        
+        if (isTimeout) {
+            ledStatusElement.innerHTML = '<span class="led-indicator"></span> ⚠️ НЕТ ПОДТВЕРЖДЕНИЯ';
+            ledStatusElement.classList.add('led-unknown');
+            return;
+        }
         
         switch(ledState) {
             case 0:
@@ -133,16 +164,36 @@ class BLEManager {
         try {
             const command = state ? 1 : 0;
             
+            // Сохраняем команду как pending
+            const commandKey = `beacon_${beaconId}`;
+            this.pendingCommands.set(commandKey, {
+                command: command,
+                timestamp: Date.now()
+            });
+            
+            // Временно показываем команду как отправленную
+            this.updateLedIndicator(command);
+            
             // РАСШИРЕННЫЙ ПРОТОКОЛ: 2 байта [beacon_id, command]
             const value = new Uint8Array([beaconId, command]);
             await this.ledCharacteristic.writeValue(value);
             
             console.log('💡 Команда LED отправлена:', {beaconId, command});
             
-            this.updateLedIndicator(command);
+            // Устанавливаем таймаут для команды
+            setTimeout(() => {
+                if (this.pendingCommands.has(commandKey)) {
+                    console.log(`⏰ Таймаут команды для маяка ${beaconId}`);
+                    this.pendingCommands.delete(commandKey);
+                    // Не сбрасываем индикатор - пусть показывает последнее известное состояние
+                }
+            }, this.commandTimeout);
             
         } catch (error) {
             console.error('Ошибка управления LED:', error);
+            // Удаляем failed команду из pending
+            const commandKey = `beacon_${beaconId}`;
+            this.pendingCommands.delete(commandKey);
         }
     }
 
@@ -160,6 +211,7 @@ class BLEManager {
         this.coordCharacteristic = null;
         this.ledCharacteristic = null;
         this.lastLedState = null;
+        this.pendingCommands.clear();
         this.updateUI();
         
         const ledStatusElement = document.getElementById("ledStatus");
