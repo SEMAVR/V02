@@ -1,0 +1,51 @@
+<!-- offline.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нет сети - Маяк Finder</title>
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+    }
+    .box {
+      background: rgba(255,255,255,0.1);
+      padding: 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      max-width: 400px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 1.1em;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+    .icon {
+      font-size: 4em;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon">📡</div>
+    <h1>Нет соединения</h1>
+    <p>Вы сейчас офлайн. Карта может быть недоступна.</p>
+    <p>Локальные функции (история, настройки) продолжают работать.</p>
+    <p>Проверьте подключение к интернету и попробуйте снова.</p>
+  </div>
+</body>
+</html>

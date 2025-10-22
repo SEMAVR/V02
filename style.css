@@ -1,0 +1,385 @@
+/* style.css */
+:root {
+  --primary-color: #1976d2;
+  --primary-dark: #145a9e;
+  --background: #ffffff;
+  --text-color: #333333;
+  --border-color: #dddddd;
+  --led-on: #4caf50;
+  --led-off: #f44336;
+  --led-unknown: #ff9800;
+  --led-blink: #ffc107;
+}
+
+.dark {
+  --background: #1e1e1e;
+  --text-color: #ffffff;
+  --border-color: #444444;
+  --led-on: #45a049;
+  --led-off: #da190b;
+  --led-unknown: #e68900;
+  --led-blink: #e6ac00;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Arial, sans-serif;
+  background: var(--background);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Уменьшенная шапка */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--primary-color);
+  color: white;
+  padding: 6px 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  min-height: 36px;
+}
+
+header h1 {
+  font-size: 1.1em;
+  margin: 0;
+}
+
+#map {
+  height: 40vh;
+  width: 100%;
+}
+
+#dataPanel {
+  padding: 12px 15px;
+  background: var(--background);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 15px;
+}
+
+/* Компактное расположение данных в одну строку */
+.compact-data-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+  margin: 6px 0;
+}
+
+.compact-data-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.compact-data-label {
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.compact-data-value {
+  font-weight: normal;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  background: var(--background);
+}
+
+/* Стили для кнопок в одной строке */
+.button-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+}
+
+.button-row button {
+  flex: 1;
+  min-width: 0;
+  max-width: 160px;
+}
+
+button {
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 120px;
+}
+
+button:hover {
+  background: var(--primary-dark);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Стили для кнопок LED */
+#ledOnBtn {
+  background: var(--led-on);
+}
+
+#ledOnBtn:hover {
+  background: #45a049;
+}
+
+#ledOffBtn {
+  background: var(--led-off);
+}
+
+#ledOffBtn:hover {
+  background: #da190b;
+}
+
+/* Стили для индикатора LED */
+.led-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 2px solid currentColor;
+  transition: all 0.3s ease;
+}
+
+.led-status {
+  font-weight: bold;
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+}
+
+.dark .led-status {
+  background: rgba(255,255,255,0.1);
+}
+
+.led-on .led-indicator {
+  background-color: var(--led-on);
+  color: var(--led-on);
+  box-shadow: 0 0 8px var(--led-on);
+}
+
+.led-off .led-indicator {
+  background-color: var(--led-off);
+  color: var(--led-off);
+}
+
+.led-blink .led-indicator {
+  background-color: var(--led-blink);
+  color: var(--led-blink);
+  animation: blink 1s infinite;
+}
+
+.led-unknown .led-indicator {
+  background-color: var(--led-unknown);
+  color: var(--led-unknown);
+  animation: pulse 2s infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Модальные окна */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--background);
+  padding: 24px;
+  border-radius: 12px;
+  z-index: 1001;
+  width: 85%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  border: 1px solid var(--border-color);
+}
+
+.hidden {
+  display: none;
+}
+
+#modalOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+
+.modal h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--text-color);
+}
+
+.modal label {
+  display: block;
+  margin: 12px 0;
+  color: var(--text-color);
+}
+
+.modal select, .modal input[type="checkbox"] {
+  margin-left: 8px;
+}
+
+.modalActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.modalActions button {
+  min-width: 80px;
+}
+
+#historyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#historyList li {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 14px;
+}
+
+#historyList li:last-child {
+  border-bottom: none;
+}
+
+.beacon-marker, .my-marker {
+  font-size: 20px;
+  text-align: center;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .button-row {
+    order: 1;
+  }
+  
+  .button-row button {
+    max-width: none;
+  }
+  
+  .compact-data-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .compact-data-item {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  button {
+    min-width: auto;
+  }
+  
+  .modal {
+    width: 90%;
+    margin: 20px;
+  }
+  
+  .led-status {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    padding: 5px 8px;
+    min-height: 34px;
+  }
+  
+  header h1 {
+    font-size: 1em;
+  }
+  
+  #map {
+    height: 40vh;
+  }
+  
+  button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .button-row {
+    gap: 6px;
+  }
+  
+  .button-row button {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+  
+  .compact-data-row {
+    gap: 6px;
+  }
+  
+  .compact-data-item {
+    font-size: 14px;
+  }
+  
+  .led-status {
+    font-size: 14px;
+    padding: 3px 10px;
+  }
+  
+  #dataPanel {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  #openBtn {
+    font-size: 13px;
+    padding: 10px 8px;
+  }
+}
+/* Стили для кнопок экспорта */
+#exportGPX, #exportCSV {
+  background: #28a745;
+  min-width: 140px;
+}
+
+#exportGPX:hover, #exportCSV:hover {
+  background: #218838;
+}

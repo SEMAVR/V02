@@ -1,0 +1,131 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Маяк Finder</title>
+  
+  <link rel="icon" href="icon-192.png" sizes="192x192">
+  <link rel="icon" href="icon-512.png" sizes="512x512">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+</head>
+<body>
+  <header>
+    <h1>🔎 Маяк Finder</h1>
+    <button id="settingsBtn">⚙️</button>
+  </header>
+
+  <main>
+    <div id="map"></div>
+
+   <div id="dataPanel">
+  <!-- Координаты маяка в одной строке -->
+  <div class="compact-data-row">
+    <div class="compact-data-item">
+      <span class="compact-data-label">Координаты маяка:</span>
+      <span class="compact-data-value" id="beaconCoords">N/A</span>
+    </div>
+  </div>
+  
+  <div class="compact-data-row">
+    <div class="compact-data-item">
+      <span class="compact-data-label">Моё местоположение:</span>
+      <span class="compact-data-value" id="myCoords">N/A</span>
+    </div>
+    <div class="compact-data-item">
+      <span class="compact-data-label">Расстояние:</span>
+      <span class="compact-data-value" id="distance">N/A</span>
+    </div>
+    <div class="compact-data-item">
+      <span class="compact-data-label">Скорость:</span>
+      <span class="compact-data-value" id="speed">N/A</span>
+    </div>
+  </div>
+  
+  <!-- Статус LED в одной строке -->
+  <div class="compact-data-row">
+    <div class="compact-data-item">
+      <span class="compact-data-label">Статус LED на маяке:</span>
+      <span class="compact-data-value" id="ledStatus">❓ Неизвестно</span>
+    </div>
+  </div>
+</div>
+
+    <div class="controls">
+  <button id="connectBtn">🔗 Подключить BLE</button>
+  
+  <!-- LED кнопки в одной строке -->
+  <div class="button-row">
+    <button id="ledOnBtn">💡 LED Вкл</button>
+    <button id="ledOffBtn">💤 LED Выкл</button>
+  </div>
+  
+  <!-- История и Очистить историю в одной строке -->
+  <div class="button-row">
+    <button id="historyBtn">📜 История</button>
+    <button id="clearHistoryBtn">🗑️ Очистить</button>
+  </div>
+  
+  <button id="openBtn">🌍 Открыть в картах</button>
+</div>
+  </main>
+
+  <!-- Модальные окна -->
+  <div id="modalOverlay" class="hidden"></div>
+
+  <div id="settingsModal" class="modal hidden">
+    <h2>⚙️ Настройки</h2>
+    <label>Тема:
+      <select id="themeSelect">
+        <option value="auto">Авто</option>
+        <option value="light">Светлая</option>
+        <option value="dark">Тёмная</option>
+      </select>
+    </label><br>
+    <label><input type="checkbox" id="showMyLocation"> Показывать моё местоположение</label><br>
+    <label><input type="checkbox" id="autoFollow"> Автоматическое отслеживание</label><br>
+    <label>Скорость в:
+      <select id="unitsSelect">
+        <option value="kmh">км/ч</option>
+        <option value="ms">м/с</option>
+      </select>
+    </label>
+    <div class="modalActions">
+      <button id="saveSettings">Сохранить</button>
+      <button id="resetSettings">Сбросить</button>
+      <button id="closeSettings">Отмена</button>
+    </div>
+  </div>
+
+  <div id="historyModal" class="modal hidden">
+  <h2>📜 История координат</h2>
+  <div id="historyListContainer" style="max-height: 300px; overflow-y: auto; margin: 10px 0;">
+    <ul id="historyList"></ul>
+  </div>
+  <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+    <button id="exportGPX">⬇️ Экспорт GPX</button>
+    <button id="exportCSV">⬇️ Экспорт CSV</button>
+  </div>
+  <button id="closeHistory" style="margin-top: 10px; width: 100%;">Закрыть</button>
+</div>
+
+  <div id="openModal" class="modal hidden">
+    <h2>🌍 Открыть в приложении</h2>
+    <button id="openGoogle">Google Maps</button>
+    <button id="openYandex">Яндекс Карты</button>
+    <button id="open2gis">2ГИС</button>
+    <button id="closeOpen">Закрыть</button>
+  </div>
+
+  <script src="history-manager.js"></script>
+  <script src="settings.js"></script>
+  <script src="ble-manager-compatible.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
