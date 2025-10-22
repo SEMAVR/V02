@@ -403,63 +403,8 @@ function openMap(service) {
   window.open(url, "_blank");
 }
 
-// Обновляем BLE Manager для многомаяковости
-class MultiBLEManager extends BLEManager {
-  handleCoordData(event) {
-    const value = event.target.value;
-    const decoder = new TextDecoder('utf-8');
-    const dataString = decoder.decode(value);
-    
-    console.log('📊 Получены данные:', dataString);
-    
-    const parts = dataString.split(',');
-    if (parts.length >= 5) {
-      const beaconId = parseInt(parts[0]);
-      const lat = parseFloat(parts[1]);
-      const lon = parseFloat(parts[2]);
-      const speed = parseFloat(parts[3]);
-      const ledState = parseInt(parts[4]);
-      
-      // Сохраняем состояние LED для этого маяка
-      this.lastLedState = ledState;
-      
-      if (typeof updateBeacon === 'function') {
-        updateBeacon(beaconId, lat, lon, speed);
-      }
-      
-      // Обновляем UI если это активный маяк
-      if (beaconId === currentBeaconId) {
-        document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-        document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
-        this.updateLedIndicator(ledState);
-      }
-    }
-  }
-
-  async setLed(state) {
-    if (!this.ledCharacteristic || !this.isConnected) {
-      alert('Сначала подключитесь к устройству');
-      return;
-    }
-
-    try {
-      const command = state ? 1 : 0;
-      // Отправляем команду для активного маяка
-      const value = new Uint8Array([command]);
-      await this.ledCharacteristic.writeValue(value);
-      console.log('💡 Команда LED отправлена для маяка', currentBeaconId, ':', command);
-      
-      // Временно обновляем индикатор
-      this.updateLedIndicator(command);
-      
-    } catch (error) {
-      console.error('Ошибка управления LED:', error);
-    }
-  }
-}
-
-// Заменяем глобальный экземпляр
-const bleManager = new MultiBLEManager();
+// УДАЛЕН КЛАСС MultiBLEManager и дублирующее объявление bleManager
+// Используется bleManager из ble-manager-compatible.js
 
 // Регистрация Service Worker
 if ('serviceWorker' in navigator) {
