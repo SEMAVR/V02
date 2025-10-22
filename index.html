@@ -66,11 +66,16 @@
         </div>
       </div>
 
-      <!-- Статус всех маяков -->
-      <div class="beacons-status">
-        <div class="compact-data-label">Статус маяков:</div>
-        <div id="beaconsStatus" class="beacons-grid">
-          <!-- Заполняется JavaScript -->
+      <!-- Сворачиваемая панель статуса маяков -->
+      <div class="beacons-status-collapsible">
+        <div class="collapsible-header" id="beaconsStatusToggle">
+          <span class="compact-data-label">Статус маяков</span>
+          <span class="toggle-arrow">▶</span>
+        </div>
+        <div id="beaconsStatusContainer" class="collapsible-content hidden">
+          <div id="beaconsStatus" class="beacons-grid">
+            <!-- Заполняется JavaScript -->
+          </div>
         </div>
       </div>
     </div>
