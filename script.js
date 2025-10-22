@@ -21,6 +21,7 @@ const beaconColors = [
 document.addEventListener("DOMContentLoaded", () => {
   initializeMap();
   setupEventListeners();
+  setupCollapsiblePanels();
   loadSettings();
   checkGeolocationSupport();
   initializeBeaconsStatus();
@@ -42,6 +43,18 @@ function initializeMap() {
   }).addTo(map);
 }
 
+function setupCollapsiblePanels() {
+  const toggle = document.getElementById('beaconsStatusToggle');
+  const content = document.getElementById('beaconsStatusContainer');
+  
+  if (toggle && content) {
+    toggle.addEventListener('click', () => {
+      content.classList.toggle('hidden');
+      toggle.classList.toggle('expanded');
+    });
+  }
+}
+
 function initializeBeaconsStatus() {
   const container = document.getElementById('beaconsStatus');
   if (!container) return;
@@ -54,8 +67,7 @@ function initializeBeaconsStatus() {
     beaconElement.dataset.beaconId = i;
     beaconElement.innerHTML = `
       <div class="beacon-indicator beacon-unknown"></div>
-      <div>Маяк ${i}</div>
-      <small>N/A</small>
+      <div>${i}</div>
     `;
     
     beaconElement.addEventListener('click', () => {
@@ -237,15 +249,12 @@ function updateBeaconStatus(beaconId, isOnline) {
   if (!statusElement) return;
   
   const indicator = statusElement.querySelector('.beacon-indicator');
-  const timeText = statusElement.querySelector('small');
   
   if (isOnline) {
     indicator.className = 'beacon-indicator beacon-online';
-    timeText.textContent = 'онлайн';
     statusElement.classList.add(`beacon-${beaconId}`);
   } else {
     indicator.className = 'beacon-indicator beacon-offline';
-    timeText.textContent = 'офлайн';
     statusElement.classList.remove(`beacon-${beaconId}`);
   }
 }
@@ -402,9 +411,6 @@ function openMap(service) {
 
   window.open(url, "_blank");
 }
-
-// УДАЛЕН КЛАСС MultiBLEManager и дублирующее объявление bleManager
-// Используется bleManager из ble-manager-compatible.js
 
 // Регистрация Service Worker
 if ('serviceWorker' in navigator) {
