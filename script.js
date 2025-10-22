@@ -308,6 +308,15 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return distanceKm * 1000; // Конвертируем в метры
 }
 
+// Функции LED управления (ОБНОВЛЕННЫЕ)
+function setLedOn() {
+    bleManager.setLed(currentBeaconId, true);
+}
+
+function setLedOff() {
+    bleManager.setLed(currentBeaconId, false);
+}
+
 // Функции истории
 function showHistory() {
   const selectedBeacon = document.getElementById('historyBeaconSelect').value;
