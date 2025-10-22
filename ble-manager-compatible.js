@@ -13,21 +13,11 @@ class BLEManager {
         try {
             console.log('🔍 Поиск BLE устройств...');
             
-            // ПРОБУЕМ РАЗНЫЕ ВАРИАНТЫ ПОИСКА
-            let deviceOptions;
-            
-            // Вариант 1: По точному имени
-            deviceOptions = {
-                filters: [{ name: 'ESP32-Tracker' }],
+            let deviceOptions = {
+                filters: [{ name: 'ESP32-MultiTracker' }],
                 optionalServices: ['12345678-1234-1234-1234-123456789abc']
             };
             
-            // Вариант 2: Если не работает, раскомментируй следующую строку
-            // deviceOptions = { filters: [{ namePrefix: 'ESP32' }], optionalServices: ['12345678-1234-1234-1234-123456789abc'] };
-            
-            // Вариант 3: Если всё равно не работает, раскомментируй эту
-            // deviceOptions = { acceptAllDevices: true, optionalServices: ['12345678-1234-1234-1234-123456789abc'] };
-
             this.device = await navigator.bluetooth.requestDevice(deviceOptions);
 
             console.log('📱 Устройство найдено:', this.device.name);
@@ -45,7 +35,6 @@ class BLEManager {
             const service = await this.server.getPrimaryService('12345678-1234-1234-1234-123456789abc');
             console.log('✅ Сервис найден');
 
-            // Характеристика координат
             console.log('🔄 Получение характеристики координат...');
             this.coordCharacteristic = await service.getCharacteristic('12345678-1234-1234-1234-123456789abd');
             await this.coordCharacteristic.startNotifications();
@@ -53,7 +42,6 @@ class BLEManager {
                 (event) => this.handleCoordData(event));
             console.log('✅ Подписка на координаты');
 
-            // Характеристика LED
             console.log('🔄 Получение характеристики LED...');
             this.ledCharacteristic = await service.getCharacteristic('12345678-1234-1234-1234-123456789abe');
             console.log('✅ LED характеристика готова');
@@ -62,7 +50,7 @@ class BLEManager {
             this.updateUI();
             
             console.log('🎉 BLE подключение установлено!');
-            alert('✅ Успешно подключено к устройству!');
+            alert('✅ Успешно подключено к многомаяковому устройству!');
             
             return true;
 
@@ -70,7 +58,7 @@ class BLEManager {
             console.error('❌ Ошибка BLE:', error);
             
             if (error.name === 'NotFoundError') {
-                alert('Устройство "ESP32-Tracker" не найдено.\n\nПопробуйте:\n1. Перезагрузить ESP32\n2. Проверить что BLE включен\n3. Использовать другой вариант поиска в коде');
+                alert('Устройство "ESP32-MultiTracker" не найдено.\n\nПопробуйте:\n1. Перезагрузить ESP32\n2. Проверить что BLE включен');
             } else if (error.name === 'SecurityError') {
                 alert('Ошибка безопасности BLE.\n\nРазрешите доступ к Bluetooth в настройках браузера.');
             } else {
@@ -88,25 +76,26 @@ class BLEManager {
         console.log('📊 Получены данные:', dataString);
         
         const parts = dataString.split(',');
-        if (parts.length >= 4) {
-            const lat = parseFloat(parts[0]);
-            const lon = parseFloat(parts[1]);
-            const speed = parseFloat(parts[2]);
-            const ledState = parseInt(parts[3]);
+        if (parts.length >= 5) {
+            const beaconId = parseInt(parts[0]);
+            const lat = parseFloat(parts[1]);
+            const lon = parseFloat(parts[2]);
+            const speed = parseFloat(parts[3]);
+            const ledState = parseInt(parts[4]);
             
             // Сохраняем состояние LED
             this.lastLedState = ledState;
             
             if (typeof updateBeacon === 'function') {
-                updateBeacon(lat, lon, speed);
+                updateBeacon(beaconId, lat, lon, speed);
             }
             
-            // Обновляем UI
-            document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-            document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
-            
-            // Обновляем индикатор LED
-            this.updateLedIndicator(ledState);
+            // Обновляем UI если это активный маяк
+            if (beaconId === window.currentBeaconId) {
+                document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
+                this.updateLedIndicator(ledState);
+            }
         }
     }
 
@@ -114,7 +103,6 @@ class BLEManager {
         const ledStatusElement = document.getElementById("ledStatus");
         if (!ledStatusElement) return;
         
-        // Убираем все классы
         ledStatusElement.className = 'led-status';
         
         switch(ledState) {
@@ -148,7 +136,6 @@ class BLEManager {
             await this.ledCharacteristic.writeValue(value);
             console.log('💡 Команда LED отправлена:', command);
             
-            // Временно обновляем индикатор
             this.updateLedIndicator(command);
             
         } catch (error) {
@@ -172,7 +159,6 @@ class BLEManager {
         this.lastLedState = null;
         this.updateUI();
         
-        // Сбрасываем индикатор LED
         const ledStatusElement = document.getElementById("ledStatus");
         if (ledStatusElement) {
             ledStatusElement.innerHTML = '<span class="led-indicator"></span> ❓ ОТКЛЮЧЕНО';
