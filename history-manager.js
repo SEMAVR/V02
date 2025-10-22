@@ -1,94 +1,167 @@
 // history-manager.js
-const HISTORY_KEY = 'mayak_history_v10';
-const MAX_POINTS = 1000;
+const HISTORY_KEY = 'mayak_multi_history_v10';
+const MAX_POINTS_PER_BEACON = 500;
 
 const HistoryManager = {
   load() {
     try {
       const data = localStorage.getItem(HISTORY_KEY);
-      return data ? JSON.parse(data) : [];
+      return data ? JSON.parse(data) : {};
     } catch(e) {
       console.error("Ошибка загрузки истории:", e);
-      return [];
+      return {};
     }
   },
 
-  save(arr) {
+  save(obj) {
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(obj));
     } catch(e) {
       console.error("Ошибка сохранения истории:", e);
     }
   },
 
-  add(lat, lon, speed) {
-    const arr = this.load();
-    arr.push({
+  add(beaconId, lat, lon, speed) {
+    const history = this.load();
+    const beaconKey = `beacon_${beaconId}`;
+    
+    if (!history[beaconKey]) {
+      history[beaconKey] = [];
+    }
+    
+    history[beaconKey].push({
       lat: parseFloat(lat),
       lon: parseFloat(lon),
       speed: speed ? parseFloat(speed) : null,
       time: Date.now()
     });
     
-    // Ограничение размера истории
-    while (arr.length > MAX_POINTS) {
-      arr.shift();
+    // Ограничение размера истории для каждого маяка
+    while (history[beaconKey].length > MAX_POINTS_PER_BEACON) {
+      history[beaconKey].shift();
     }
     
-    this.save(arr);
+    this.save(history);
   },
 
-  clear() {
+  clear(beaconId = null) {
     try {
-      localStorage.removeItem(HISTORY_KEY);
+      if (beaconId === null) {
+        // Очистить всю историю
+        localStorage.removeItem(HISTORY_KEY);
+      } else {
+        // Очистить историю конкретного маяка
+        const history = this.load();
+        const beaconKey = `beacon_${beaconId}`;
+        if (history[beaconKey]) {
+          delete history[beaconKey];
+          this.save(history);
+        }
+      }
     } catch(e) {
       console.error("Ошибка очистки истории:", e);
     }
   },
 
-  exportGPX() {
-    const arr = this.load();
+  exportGPX(beaconId = 'all') {
+    const history = this.load();
     let gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Маяк Finder" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="Многомаяковый Finder" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata>
-    <name>Трек маяка</name>
-    <desc>Трек координат маяка</desc>
+    <name>Трек маяков</name>
+    <desc>Трек координат многомаяковой системы</desc>
     <time>${new Date().toISOString()}</time>
   </metadata>
-  <trk>
-    <name>Трек маяка</name>
-    <trkseg>
 `;
     
-    arr.forEach(point => {
-      const time = new Date(point.time).toISOString();
-      gpx += `      <trkpt lat="${point.lat}" lon="${point.lon}">\n`;
-      if (point.speed) {
-        gpx += `        <speed>${point.speed}</speed>\n`;
+    if (beaconId === 'all') {
+      // Экспорт всех маяков
+      for (let i = 0; i < 8; i++) {
+        const beaconKey = `beacon_${i}`;
+        if (history[beaconKey] && history[beaconKey].length > 0) {
+          gpx += this._generateTrackSegment(i, history[beaconKey]);
+        }
       }
-      gpx += `        <time>${time}</time>\n`;
-      gpx += `      </trkpt>\n`;
-    });
+    } else {
+      // Экспорт конкретного маяка
+      const beaconKey = `beacon_${beaconId}`;
+      if (history[beaconKey] && history[beaconKey].length > 0) {
+        gpx += this._generateTrackSegment(beaconId, history[beaconKey]);
+      }
+    }
     
-    gpx += `    </trkseg>
-  </trk>
-</gpx>`;
-    
+    gpx += `</gpx>`;
     return gpx;
   },
 
-  exportCSV() {
-    const arr = this.load();
-    let csv = 'lat,lon,speed,timestamp,datetime\n';
-    arr.forEach(point => {
-      const date = new Date(point.time);
-      csv += `${point.lat},${point.lon},${point.speed || ''},${point.time},"${date.toISOString()}"\n`;
+  _generateTrackSegment(beaconId, points) {
+    let segment = `  <trk>
+    <name>Маяк ${beaconId}</name>
+    <trkseg>
+`;
+    
+    points.forEach(point => {
+      const time = new Date(point.time).toISOString();
+      segment += `      <trkpt lat="${point.lat}" lon="${point.lon}">\n`;
+      if (point.speed) {
+        segment += `        <speed>${point.speed}</speed>\n`;
+      }
+      segment += `        <time>${time}</time>\n`;
+      segment += `      </trkpt>\n`;
     });
+    
+    segment += `    </trkseg>
+  </trk>
+`;
+    return segment;
+  },
+
+  exportCSV(beaconId = 'all') {
+    const history = this.load();
+    let csv = 'beacon_id,lat,lon,speed,timestamp,datetime\n';
+    
+    if (beaconId === 'all') {
+      // Экспорт всех маяков
+      for (let i = 0; i < 8; i++) {
+        const beaconKey = `beacon_${i}`;
+        if (history[beaconKey]) {
+          history[beaconKey].forEach(point => {
+            const date = new Date(point.time);
+            csv += `${i},${point.lat},${point.lon},${point.speed || ''},${point.time},"${date.toISOString()}"\n`;
+          });
+        }
+      }
+    } else {
+      // Экспорт конкретного маяка
+      const beaconKey = `beacon_${beaconId}`;
+      if (history[beaconKey]) {
+        history[beaconKey].forEach(point => {
+          const date = new Date(point.time);
+          csv += `${beaconId},${point.lat},${point.lon},${point.speed || ''},${point.time},"${date.toISOString()}"\n`;
+        });
+      }
+    }
+    
     return csv;
   },
 
-  getLastPoints(count = 10) {
-    const arr = this.load();
-    return arr.slice(-count);
+  getBeaconHistory(beaconId, count = 50) {
+    const history = this.load();
+    const beaconKey = `beacon_${beaconId}`;
+    return history[beaconKey] ? history[beaconKey].slice(-count) : [];
+  },
+
+  getAllBeaconsLastPoints() {
+    const history = this.load();
+    const result = {};
+    
+    for (let i = 0; i < 8; i++) {
+      const beaconKey = `beacon_${i}`;
+      if (history[beaconKey] && history[beaconKey].length > 0) {
+        result[i] = history[beaconKey][history[beaconKey].length - 1];
+      }
+    }
+    
+    return result;
   }
 };
