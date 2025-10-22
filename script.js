@@ -1,9 +1,21 @@
 // script.js
 let map;
-let beaconMarker;
+let beaconMarkers = {};
 let myMarker;
 let myLocationCircle;
 let watchId = null;
+let currentBeaconId = 0;
+
+// Иконки для разных маяков
+const beaconIcons = [
+  '🔴', '🟢', '🔵', '🟡', '🟣', '🟠', '⚫', '⚪'
+];
+
+// Цвета для маяков
+const beaconColors = [
+  '#ff4444', '#44ff44', '#4444ff', '#ffff44',
+  '#ff44ff', '#44ffff', '#ff8844', '#8844ff'
+];
 
 // Инициализация приложения
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,23 +23,15 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   loadSettings();
   checkGeolocationSupport();
+  initializeBeaconsStatus();
 });
 
 function initializeMap() {
-  map = L.map("map").setView([54.977449, 73.470961], 13);
+  map = L.map("map").setView([55.7558, 37.6173], 5); // Центр России
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap"
   }).addTo(map);
-
-  // Маркер маяка
-  beaconMarker = L.marker([54.977449, 73.470961], {
-    icon: L.divIcon({
-      html: '🔴',
-      iconSize: [20, 20],
-      className: 'beacon-marker'
-    })
-  }).addTo(map).bindPopup("Маяк");
 
   // Круг точности местоположения
   myLocationCircle = L.circle([0, 0], {
@@ -36,6 +40,46 @@ function initializeMap() {
     fillOpacity: 0.1,
     radius: 1
   }).addTo(map);
+}
+
+function initializeBeaconsStatus() {
+  const container = document.getElementById('beaconsStatus');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  for (let i = 0; i < 8; i++) {
+    const beaconElement = document.createElement('div');
+    beaconElement.className = 'beacon-status-item';
+    beaconElement.dataset.beaconId = i;
+    beaconElement.innerHTML = `
+      <div class="beacon-indicator beacon-unknown"></div>
+      <div>Маяк ${i}</div>
+      <small>N/A</small>
+    `;
+    
+    beaconElement.addEventListener('click', () => {
+      switchBeacon(i);
+    });
+    
+    container.appendChild(beaconElement);
+  }
+}
+
+function switchBeacon(beaconId) {
+  currentBeaconId = beaconId;
+  document.getElementById('beaconSelect').value = beaconId;
+  
+  // Обновляем активный класс
+  document.querySelectorAll('.beacon-status-item').forEach(item => {
+    if (parseInt(item.dataset.beaconId) === beaconId) {
+      item.classList.add('active');
+    } else {
+      item.classList.remove('active');
+    }
+  });
+  
+  updateBeaconDisplay();
 }
 
 function setupEventListeners() {
@@ -48,6 +92,11 @@ function setupEventListeners() {
   document.getElementById("settingsBtn").addEventListener("click", () => showModal("settingsModal"));
   document.getElementById("clearHistoryBtn").addEventListener("click", clearHistory);
 
+  // Селектор маяка
+  document.getElementById("beaconSelect").addEventListener("change", (e) => {
+    switchBeacon(parseInt(e.target.value));
+  });
+
   // Модальные окна
   document.getElementById("closeOpen").addEventListener("click", () => hideModal("openModal"));
   document.getElementById("closeHistory").addEventListener("click", () => hideModal("historyModal"));
@@ -57,6 +106,7 @@ function setupEventListeners() {
   // Действия в модальных окнах
   document.getElementById("exportGPX").addEventListener("click", exportGPX);
   document.getElementById("exportCSV").addEventListener("click", exportCSV);
+  document.getElementById("historyBeaconSelect").addEventListener("change", showHistory);
   document.getElementById("openGoogle").addEventListener("click", () => openMap("google"));
   document.getElementById("openYandex").addEventListener("click", () => openMap("yandex"));
   document.getElementById("open2gis").addEventListener("click", () => openMap("2gis"));
@@ -68,7 +118,6 @@ function checkGeolocationSupport() {
     return;
   }
   
-  // Запрос разрешения на геолокацию
   navigator.geolocation.getCurrentPosition(
     (position) => {
       startTracking();
@@ -128,7 +177,7 @@ function updateMyLocation(position) {
     if (!myMarker) {
       myMarker = L.marker([lat, lon], {
         icon: L.divIcon({
-          html: '🔵',
+          html: '👤',
           iconSize: [20, 20],
           className: 'my-marker'
         })
@@ -152,33 +201,84 @@ function updateMyLocation(position) {
     }
   }
 
-  // Расчет расстояния до маяка
-  const beaconLatLng = beaconMarker.getLatLng();
-  if (beaconLatLng.lat !== 54.977449 || beaconLatLng.lng !== 73.470961) { // Если не начальная позиция
-    const distance = calculateDistance(lat, lon, beaconLatLng.lat, beaconLatLng.lng);
-    document.getElementById("distance").textContent = `${distance.toFixed(2)} км`;
+  // Расчет расстояния до активного маяка
+  updateDistanceToBeacon();
+}
+
+function updateBeacon(beaconId, lat, lon, speed = null) {
+  // Создаем или обновляем маркер маяка
+  if (!beaconMarkers[beaconId]) {
+    beaconMarkers[beaconId] = L.marker([lat, lon], {
+      icon: L.divIcon({
+        html: beaconIcons[beaconId] || '📍',
+        iconSize: [24, 24],
+        className: 'beacon-marker'
+      })
+    }).addTo(map).bindPopup(`Маяк ${beaconId}: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+  } else {
+    beaconMarkers[beaconId].setLatLng([lat, lon]);
+  }
+  
+  // Добавление в историю
+  HistoryManager.add(beaconId, lat, lon, speed);
+  
+  // Обновление статуса маяка
+  updateBeaconStatus(beaconId, true);
+  
+  // Если это активный маяк, обновляем отображение
+  if (beaconId === currentBeaconId) {
+    document.getElementById("beaconCoords").textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    updateDistanceToBeacon();
   }
 }
 
-function updateBeacon(lat, lon, speed = null) {
-  beaconMarker.setLatLng([lat, lon])
-    .bindPopup(`Маяк: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+function updateBeaconStatus(beaconId, isOnline) {
+  const statusElement = document.querySelector(`.beacon-status-item[data-beacon-id="${beaconId}"]`);
+  if (!statusElement) return;
   
-  document.getElementById("beaconCoords").textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  const indicator = statusElement.querySelector('.beacon-indicator');
+  const timeText = statusElement.querySelector('small');
   
-  // Добавление в историю
-  HistoryManager.add(lat, lon, speed);
+  if (isOnline) {
+    indicator.className = 'beacon-indicator beacon-online';
+    timeText.textContent = 'онлайн';
+    statusElement.classList.add(`beacon-${beaconId}`);
+  } else {
+    indicator.className = 'beacon-indicator beacon-offline';
+    timeText.textContent = 'офлайн';
+    statusElement.classList.remove(`beacon-${beaconId}`);
+  }
+}
+
+function updateBeaconDisplay() {
+  const lastPoints = HistoryManager.getAllBeaconsLastPoints();
+  const currentBeaconData = lastPoints[currentBeaconId];
   
-  // Обновление расстояния
-  if (myMarker) {
+  if (currentBeaconData) {
+    document.getElementById("beaconCoords").textContent = 
+      `${currentBeaconData.lat.toFixed(5)}, ${currentBeaconData.lon.toFixed(5)}`;
+  } else {
+    document.getElementById("beaconCoords").textContent = "N/A";
+  }
+  
+  updateDistanceToBeacon();
+}
+
+function updateDistanceToBeacon() {
+  const lastPoints = HistoryManager.getAllBeaconsLastPoints();
+  const currentBeaconData = lastPoints[currentBeaconId];
+  
+  if (currentBeaconData && myMarker) {
     const myLatLng = myMarker.getLatLng();
-    const distance = calculateDistance(myLatLng.lat, myLatLng.lng, lat, lon);
+    const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
     document.getElementById("distance").textContent = `${distance.toFixed(2)} км`;
+  } else {
+    document.getElementById("distance").textContent = "N/A";
   }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Радиус Земли в км
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -191,7 +291,11 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 // Функции истории
 function showHistory() {
-  const history = HistoryManager.load();
+  const selectedBeacon = document.getElementById('historyBeaconSelect').value;
+  const history = selectedBeacon === 'all' 
+    ? HistoryManager.getAllHistory() 
+    : HistoryManager.getBeaconHistory(parseInt(selectedBeacon), 50);
+  
   const list = document.getElementById("historyList");
   list.innerHTML = "";
 
@@ -200,9 +304,10 @@ function showHistory() {
   } else {
     history.slice(-20).reverse().forEach(point => {
       const li = document.createElement("li");
+      const beaconId = point.beaconId || selectedBeacon;
       li.innerHTML = `
         <small>${new Date(point.time).toLocaleString()}</small><br>
-        ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}
+        <strong>Маяк ${beaconId}:</strong> ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}
         ${point.speed ? ` | ${point.speed.toFixed(2)} м/с` : ''}
       `;
       li.style.marginBottom = "8px";
@@ -214,28 +319,34 @@ function showHistory() {
   showModal("historyModal");
 }
 
-// Экспорт в GPX формате
 function exportGPX() {
-  const gpx = HistoryManager.exportGPX();
+  const selectedBeacon = document.getElementById('historyBeaconSelect').value;
+  const gpx = HistoryManager.exportGPX(selectedBeacon);
   const blob = new Blob([gpx], { type: "application/gpx+xml;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `mayak_track_${new Date().toISOString().slice(0,10)}.gpx`;
+  const filename = selectedBeacon === 'all' 
+    ? `all_beacons_track_${new Date().toISOString().slice(0,10)}.gpx`
+    : `beacon_${selectedBeacon}_track_${new Date().toISOString().slice(0,10)}.gpx`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-// Экспорт в CSV формате
 function exportCSV() {
-  const csv = HistoryManager.exportCSV();
+  const selectedBeacon = document.getElementById('historyBeaconSelect').value;
+  const csv = HistoryManager.exportCSV(selectedBeacon);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `mayak_history_${new Date().toISOString().slice(0,10)}.csv`;
+  const filename = selectedBeacon === 'all' 
+    ? `all_beacons_history_${new Date().toISOString().slice(0,10)}.csv`
+    : `beacon_${selectedBeacon}_history_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -243,9 +354,9 @@ function exportCSV() {
 }
 
 function clearHistory() {
-  if (confirm("Вы уверены, что хотите очистить всю историю?")) {
-    HistoryManager.clear();
-    alert("История очищена");
+  if (confirm("Вы уверены, что хотите очистить историю активного маяка?")) {
+    HistoryManager.clear(currentBeaconId);
+    alert(`История маяка ${currentBeaconId} очищена`);
   }
 }
 
@@ -292,10 +403,67 @@ function openMap(service) {
   window.open(url, "_blank");
 }
 
+// Обновляем BLE Manager для многомаяковости
+class MultiBLEManager extends BLEManager {
+  handleCoordData(event) {
+    const value = event.target.value;
+    const decoder = new TextDecoder('utf-8');
+    const dataString = decoder.decode(value);
+    
+    console.log('📊 Получены данные:', dataString);
+    
+    const parts = dataString.split(',');
+    if (parts.length >= 5) {
+      const beaconId = parseInt(parts[0]);
+      const lat = parseFloat(parts[1]);
+      const lon = parseFloat(parts[2]);
+      const speed = parseFloat(parts[3]);
+      const ledState = parseInt(parts[4]);
+      
+      // Сохраняем состояние LED для этого маяка
+      this.lastLedState = ledState;
+      
+      if (typeof updateBeacon === 'function') {
+        updateBeacon(beaconId, lat, lon, speed);
+      }
+      
+      // Обновляем UI если это активный маяк
+      if (beaconId === currentBeaconId) {
+        document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+        document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
+        this.updateLedIndicator(ledState);
+      }
+    }
+  }
+
+  async setLed(state) {
+    if (!this.ledCharacteristic || !this.isConnected) {
+      alert('Сначала подключитесь к устройству');
+      return;
+    }
+
+    try {
+      const command = state ? 1 : 0;
+      // Отправляем команду для активного маяка
+      const value = new Uint8Array([command]);
+      await this.ledCharacteristic.writeValue(value);
+      console.log('💡 Команда LED отправлена для маяка', currentBeaconId, ':', command);
+      
+      // Временно обновляем индикатор
+      this.updateLedIndicator(command);
+      
+    } catch (error) {
+      console.error('Ошибка управления LED:', error);
+    }
+  }
+}
+
+// Заменяем глобальный экземпляр
+const bleManager = new MultiBLEManager();
+
 // Регистрация Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Используйте относительный путь
     navigator.serviceWorker.register('./service-worker.js')
       .then(registration => {
         console.log('SW registered: ', registration);
