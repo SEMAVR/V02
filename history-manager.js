@@ -145,23 +145,31 @@ const HistoryManager = {
     return csv;
   },
 
-  getBeaconHistory(beaconId, count = 50) {
-    const history = this.load();
-    const beaconKey = `beacon_${beaconId}`;
-    return history[beaconKey] ? history[beaconKey].slice(-count) : [];
-  },
+// В history-manager.js добавьте эту функцию если её нет
+getBeaconHistory(beaconId, count = 50) {
+  const history = this.load();
+  const beaconKey = `beacon_${beaconId}`;
+  return history[beaconKey] ? history[beaconKey].slice(-count) : [];
+},
 
-  getAllBeaconsLastPoints() {
-    const history = this.load();
-    const result = {};
-    
-    for (let i = 0; i < 8; i++) {
-      const beaconKey = `beacon_${i}`;
-      if (history[beaconKey] && history[beaconKey].length > 0) {
-        result[i] = history[beaconKey][history[beaconKey].length - 1];
-      }
+// И если нет функции getAllHistory, добавьте:
+getAllHistory() {
+  const history = this.load();
+  const allPoints = [];
+  
+  for (let i = 0; i < 8; i++) {
+    const beaconKey = `beacon_${i}`;
+    if (history[beaconKey]) {
+      history[beaconKey].forEach(point => {
+        allPoints.push({
+          ...point,
+          beaconId: i
+        });
+      });
     }
-    
-    return result;
   }
+  
+  // Сортируем по времени
+  return allPoints.sort((a, b) => a.time - b.time);
+}
 };
