@@ -85,6 +85,89 @@ header h1 {
   font-weight: normal;
 }
 
+/* Стили для компактного отображения статусов маяков */
+.beacons-status-compact {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.beacon-status-compact-item {
+  display: flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.05);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid var(--border-color);
+  min-width: 24px;
+  justify-content: center;
+}
+
+.dark .beacon-status-compact-item {
+  background: rgba(255,255,255,0.1);
+}
+
+.beacon-status-compact-item:hover {
+  background: rgba(0,0,0,0.08);
+  transform: translateY(-1px);
+}
+
+.dark .beacon-status-compact-item:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.beacon-status-compact-item.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.beacon-compact-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  border: 1px solid currentColor;
+  transition: all 0.3s ease;
+}
+
+.beacon-online .beacon-compact-indicator {
+  background-color: #4caf50;
+  box-shadow: 0 0 4px #4caf50;
+}
+
+.beacon-offline .beacon-compact-indicator {
+  background-color: #f44336;
+}
+
+.beacon-unknown .beacon-compact-indicator {
+  background-color: #ff9800;
+  animation: pulse 2s infinite;
+}
+
+/* Цвета для разных маяков в компактном виде */
+.beacon-status-compact-item.beacon-0 .beacon-compact-indicator { border-color: #ff4444; }
+.beacon-status-compact-item.beacon-1 .beacon-compact-indicator { border-color: #44ff44; }
+.beacon-status-compact-item.beacon-2 .beacon-compact-indicator { border-color: #4444ff; }
+.beacon-status-compact-item.beacon-3 .beacon-compact-indicator { border-color: #ffff44; }
+.beacon-status-compact-item.beacon-4 .beacon-compact-indicator { border-color: #ff44ff; }
+.beacon-status-compact-item.beacon-5 .beacon-compact-indicator { border-color: #44ffff; }
+.beacon-status-compact-item.beacon-6 .beacon-compact-indicator { border-color: #ff8844; }
+.beacon-status-compact-item.beacon-7 .beacon-compact-indicator { border-color: #8844ff; }
+
+.beacon-status-compact-item.active.beacon-0 { background: #ff4444; }
+.beacon-status-compact-item.active.beacon-1 { background: #44ff44; }
+.beacon-status-compact-item.active.beacon-2 { background: #4444ff; }
+.beacon-status-compact-item.active.beacon-3 { background: #ffff44; color: #333; }
+.beacon-status-compact-item.active.beacon-4 { background: #ff44ff; }
+.beacon-status-compact-item.active.beacon-5 { background: #44ffff; color: #333; }
+.beacon-status-compact-item.active.beacon-6 { background: #ff8844; }
+.beacon-status-compact-item.active.beacon-7 { background: #8844ff; }
+
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -194,12 +277,6 @@ button:active {
   animation: pulse 2s infinite;
 }
 
-.led-timeout .led-indicator {
-    background-color: #ff9800;
-    color: #ff9800;
-    animation: blink 0.5s infinite;
-}
-
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.3; }
@@ -288,139 +365,6 @@ button:active {
   text-align: center;
 }
 
-/* Стили для сворачиваемой панели статуса маяков */
-.beacons-status-collapsible {
-  margin-top: 8px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.collapsible-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: rgba(0,0,0,0.03);
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.2s;
-}
-
-.collapsible-header:hover {
-  background: rgba(0,0,0,0.06);
-}
-
-.toggle-arrow {
-  transition: transform 0.3s ease;
-  font-size: 12px;
-  color: var(--text-color);
-}
-
-.collapsible-header.expanded .toggle-arrow {
-  transform: rotate(90deg);
-}
-
-.collapsible-content {
-  padding: 8px;
-  background: var(--background);
-  border-top: 1px solid var(--border-color);
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-/* Уменьшенная сетка маяков */
-.beacons-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-
-.beacon-status-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 4px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.03);
-  font-size: 11px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-height: 40px;
-  justify-content: center;
-}
-
-.beacon-status-item:hover {
-  background: rgba(0,0,0,0.06);
-}
-
-.beacon-status-item.active {
-  background: var(--primary-color);
-  color: white;
-}
-
-.beacon-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-bottom: 2px;
-  border: 1px solid currentColor;
-}
-
-.beacon-online {
-  background-color: #4caf50;
-  animation: pulse 2s infinite;
-}
-
-.beacon-offline {
-  background-color: #f44336;
-}
-
-.beacon-unknown {
-  background-color: #ff9800;
-}
-
-/* Цвета для разных маяков */
-.beacon-0 .beacon-indicator { color: #ff4444; }
-.beacon-1 .beacon-indicator { color: #44ff44; }
-.beacon-2 .beacon-indicator { color: #4444ff; }
-.beacon-3 .beacon-indicator { color: #ffff44; }
-.beacon-4 .beacon-indicator { color: #ff44ff; }
-.beacon-5 .beacon-indicator { color: #44ffff; }
-.beacon-6 .beacon-indicator { color: #ff8844; }
-.beacon-7 .beacon-indicator { color: #8844ff; }
-
-/* Стили для кнопок экспорта */
-#exportGPX, #exportCSV {
-  background: #28a745;
-  min-width: 140px;
-}
-
-#exportGPX:hover, #exportCSV:hover {
-  background: #218838;
-}
-
-/* Селектор маяка */
-.beacon-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  padding: 8px;
-  background: rgba(0,0,0,0.03);
-  border-radius: 8px;
-}
-
-#beaconSelect {
-  padding: 6px 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--background);
-  color: var(--text-color);
-  font-size: 14px;
-}
-
 /* Адаптивность */
 @media (max-width: 768px) {
   .controls {
@@ -448,6 +392,11 @@ button:active {
     justify-content: space-between;
   }
   
+  .beacons-status-compact {
+    justify-content: flex-start;
+    gap: 3px;
+  }
+  
   button {
     min-width: auto;
   }
@@ -459,15 +408,6 @@ button:active {
   
   .led-status {
     align-self: flex-start;
-  }
-  
-  .beacons-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .beacon-selector {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 
@@ -507,6 +447,18 @@ button:active {
     font-size: 14px;
   }
   
+  .beacon-status-compact-item {
+    font-size: 11px;
+    padding: 2px 6px;
+    min-width: 20px;
+  }
+  
+  .beacon-compact-indicator {
+    width: 6px;
+    height: 6px;
+    margin-right: 3px;
+  }
+  
   .led-status {
     font-size: 14px;
     padding: 3px 10px;
@@ -521,26 +473,22 @@ button:active {
     font-size: 13px;
     padding: 10px 8px;
   }
-  
-  .beacons-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .beacon-status-item {
-    flex-direction: row;
-    justify-content: space-between;
-    text-align: left;
-    min-height: 35px;
-  }
-  
-  .beacon-indicator {
-    margin-bottom: 0;
-    margin-right: 8px;
-  }
 }
 
-@media (max-width: 320px) {
-  .beacons-grid {
-    grid-template-columns: 1fr;
-  }
+/* Стили для кнопок экспорта */
+#exportGPX, #exportCSV {
+  background: #28a745;
+  min-width: 140px;
+}
+
+#exportGPX:hover, #exportCSV:hover {
+  background: #218838;
+}
+
+/* Убираем старые стили для статуса маяков */
+.beacons-status,
+.beacons-grid,
+.beacon-status-item,
+.beacon-indicator {
+  display: none;
 }
