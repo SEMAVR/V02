@@ -386,7 +386,28 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 // Функции истории
 function showHistory() {
-  const history = HistoryManager.load();
+  const selectedBeacon = document.getElementById('historyBeaconSelect').value;
+  let history;
+  
+  if (selectedBeacon === 'all') {
+    // Для "Все маяки" нужно собрать историю всех маяков
+    history = [];
+    for (let i = 0; i < 8; i++) {
+      const beaconHistory = HistoryManager.getBeaconHistory(i, 50);
+      beaconHistory.forEach(point => {
+        history.push({
+          ...point,
+          beaconId: i // Добавляем ID маяка к каждой точке
+        });
+      });
+    }
+    // Сортируем по времени
+    history.sort((a, b) => a.time - b.time);
+  } else {
+    // Для конкретного маяка
+    history = HistoryManager.getBeaconHistory(parseInt(selectedBeacon), 50);
+  }
+  
   const list = document.getElementById("historyList");
   list.innerHTML = "";
 
@@ -395,9 +416,10 @@ function showHistory() {
   } else {
     history.slice(-20).reverse().forEach(point => {
       const li = document.createElement("li");
+      const beaconId = point.beaconId !== undefined ? point.beaconId : selectedBeacon;
       li.innerHTML = `
         <small>${new Date(point.time).toLocaleString()}</small><br>
-        ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}
+        <strong>Маяк ${beaconId}:</strong> ${point.lat.toFixed(5)}, ${point.lon.toFixed(5)}
         ${point.speed ? ` | ${point.speed.toFixed(2)} м/с` : ''}
       `;
       li.style.marginBottom = "8px";
