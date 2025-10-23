@@ -137,15 +137,56 @@ class BLEManager {
 
         try {
             const command = state ? 1 : 0;
-            const value = new Uint8Array([command]);
+            
+            // ВАЖНО: Отправляем команду в новом формате [beaconId, command]
+            const beaconId = window.currentBeaconId || 0;
+            const value = new Uint8Array([beaconId, command]);
+            
             await this.ledCharacteristic.writeValue(value);
-            console.log('💡 Команда LED отправлена:', command);
+            console.log(`💡 Команда LED отправлена: маяк ${beaconId}, команда ${command}`);
             
             // Временно обновляем индикатор
             this.updateLedIndicator(command);
             
+            // Сохраняем статус локально
+            if (typeof updateLedStatus === 'function') {
+                updateLedStatus(beaconId, command);
+            }
+            
         } catch (error) {
             console.error('Ошибка управления LED:', error);
+            alert('Ошибка отправки команды LED: ' + error.message);
+        }
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Отправка команды мигания
+    async setLedBlink() {
+        if (!this.ledCharacteristic || !this.isConnected) {
+            alert('Сначала подключитесь к устройству');
+            return;
+        }
+
+        try {
+            const command = 2; // Команда мигания
+            
+            // Отправляем команду в новом формате [beaconId, command]
+            const beaconId = window.currentBeaconId || 0;
+            const value = new Uint8Array([beaconId, command]);
+            
+            await this.ledCharacteristic.writeValue(value);
+            console.log(`💡 Команда LED отправлена: маяк ${beaconId}, команда ${command} (мигание)`);
+            
+            // Временно обновляем индикатор
+            this.updateLedIndicator(command);
+            
+            // Сохраняем статус локально
+            if (typeof updateLedStatus === 'function') {
+                updateLedStatus(beaconId, command);
+            }
+            
+        } catch (error) {
+            console.error('Ошибка управления LED:', error);
+            alert('Ошибка отправки команды LED: ' + error.message);
         }
     }
 
@@ -202,4 +243,9 @@ function setLedOn() {
 
 function setLedOff() {
     bleManager.setLed(false);
+}
+
+// НОВАЯ ФУНКЦИЯ: Управление миганием
+function setLedBlink() {
+    bleManager.setLedBlink();
 }
