@@ -7,8 +7,6 @@ class BLEManager {
         this.ledCharacteristic = null;
         this.isConnected = false;
         this.lastLedState = null;
-        this.pendingCommands = new Map(); // Для отслеживания отправленных команд
-        this.commandTimeout = 10000; // 10 секунд таймаут для команды
     }
 
     async connect() {
@@ -70,74 +68,47 @@ class BLEManager {
         }
     }
 
-// В файле ble-manager-compatible.js, в функции handleCoordData, добавьте:
-handleCoordData(event) {
-    const value = event.target.value;
-    const decoder = new TextDecoder('utf-8');
-    const dataString = decoder.decode(value);
-    
-    console.log('📊 Получены данные:', dataString);
-    
-    const parts = dataString.split(',');
-    if (parts.length >= 5) {
-        const beaconId = parseInt(parts[0]);
-        const lat = parseFloat(parts[1]);
-        const lon = parseFloat(parts[2]);
-        const speed = parseFloat(parts[3]);
-        const ledState = parseInt(parts[4]);
+    handleCoordData(event) {
+        const value = event.target.value;
+        const decoder = new TextDecoder('utf-8');
+        const dataString = decoder.decode(value);
         
-        // Сохраняем состояние LED
-        this.lastLedState = ledState;
+        console.log('📊 Получены данные:', dataString);
         
-        if (typeof updateBeacon === 'function') {
-            updateBeacon(beaconId, lat, lon, speed);
-        }
-        
-        // ОБНОВЛЕНИЕ: Вызываем функцию обновления статуса LED
-        if (typeof updateLedStatus === 'function') {
-            updateLedStatus(beaconId, ledState);
-        }
-        
-        // Обновляем UI если это активный маяк
-        if (beaconId === window.currentBeaconId) {
-            document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-            document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
-            this.updateLedIndicator(ledState);
-        }
-    }
-}
-
-    // Проверка pending команд
-    checkPendingCommand(beaconId, actualLedState) {
-        const commandKey = `beacon_${beaconId}`;
-        if (this.pendingCommands.has(commandKey)) {
-            const pendingCommand = this.pendingCommands.get(commandKey);
-            const timeDiff = Date.now() - pendingCommand.timestamp;
+        const parts = dataString.split(',');
+        if (parts.length >= 5) {
+            const beaconId = parseInt(parts[0]);
+            const lat = parseFloat(parts[1]);
+            const lon = parseFloat(parts[2]);
+            const speed = parseFloat(parts[3]);
+            const ledState = parseInt(parts[4]);
             
-            if (actualLedState === pendingCommand.command) {
-                // Команда успешно выполнена
-                console.log(`✅ Команда для маяка ${beaconId} подтверждена`);
-                this.pendingCommands.delete(commandKey);
-            } else if (timeDiff > this.commandTimeout) {
-                // Таймаут команды
-                console.log(`❌ Таймаут команды для маяка ${beaconId}`);
-                this.pendingCommands.delete(commandKey);
-                this.updateLedIndicator(0, true); // Сбрасываем индикатор
+            // Сохраняем состояние LED
+            this.lastLedState = ledState;
+            
+            if (typeof updateBeacon === 'function') {
+                updateBeacon(beaconId, lat, lon, speed);
+            }
+            
+            // ВАЖНО: Обновляем статус LED для активного маяка
+            if (beaconId === window.currentBeaconId) {
+                document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
+                this.updateLedIndicator(ledState);
+            }
+            
+            // Обновляем статус LED для всех маяков
+            if (typeof updateLedStatus === 'function') {
+                updateLedStatus(beaconId, ledState);
             }
         }
     }
 
-    updateLedIndicator(ledState, isTimeout = false) {
+    updateLedIndicator(ledState) {
         const ledStatusElement = document.getElementById("ledStatus");
         if (!ledStatusElement) return;
         
         ledStatusElement.className = 'led-status';
-        
-        if (isTimeout) {
-            ledStatusElement.innerHTML = '<span class="led-indicator"></span> ⚠️ НЕТ ПОДТВЕРЖДЕНИЯ';
-            ledStatusElement.classList.add('led-unknown');
-            return;
-        }
         
         switch(ledState) {
             case 0:
@@ -158,7 +129,7 @@ handleCoordData(event) {
         }
     }
 
-    async setLed(beaconId, state) {
+    async setLed(state) {
         if (!this.ledCharacteristic || !this.isConnected) {
             alert('Сначала подключитесь к устройству');
             return;
@@ -166,37 +137,15 @@ handleCoordData(event) {
 
         try {
             const command = state ? 1 : 0;
-            
-            // Сохраняем команду как pending
-            const commandKey = `beacon_${beaconId}`;
-            this.pendingCommands.set(commandKey, {
-                command: command,
-                timestamp: Date.now()
-            });
-            
-            // Временно показываем команду как отправленную
-            this.updateLedIndicator(command);
-            
-            // РАСШИРЕННЫЙ ПРОТОКОЛ: 2 байта [beacon_id, command]
-            const value = new Uint8Array([beaconId, command]);
+            const value = new Uint8Array([command]);
             await this.ledCharacteristic.writeValue(value);
+            console.log('💡 Команда LED отправлена:', command);
             
-            console.log('💡 Команда LED отправлена:', {beaconId, command});
-            
-            // Устанавливаем таймаут для команды
-            setTimeout(() => {
-                if (this.pendingCommands.has(commandKey)) {
-                    console.log(`⏰ Таймаут команды для маяка ${beaconId}`);
-                    this.pendingCommands.delete(commandKey);
-                    // Не сбрасываем индикатор - пусть показывает последнее известное состояние
-                }
-            }, this.commandTimeout);
+            // Временно обновляем индикатор
+            this.updateLedIndicator(command);
             
         } catch (error) {
             console.error('Ошибка управления LED:', error);
-            // Удаляем failed команду из pending
-            const commandKey = `beacon_${beaconId}`;
-            this.pendingCommands.delete(commandKey);
         }
     }
 
@@ -214,7 +163,6 @@ handleCoordData(event) {
         this.coordCharacteristic = null;
         this.ledCharacteristic = null;
         this.lastLedState = null;
-        this.pendingCommands.clear();
         this.updateUI();
         
         const ledStatusElement = document.getElementById("ledStatus");
@@ -249,9 +197,9 @@ function connectBLE() {
 }
 
 function setLedOn() {
-    bleManager.setLed(window.currentBeaconId, true);
+    bleManager.setLed(true);
 }
 
 function setLedOff() {
-    bleManager.setLed(window.currentBeaconId, false);
+    bleManager.setLed(false);
 }
