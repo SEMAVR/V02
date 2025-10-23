@@ -125,12 +125,12 @@ class BLEManager {
             await this.ledCharacteristic.writeValue(value);
             console.log(`✅ Команда отправлена на маяк ${beaconId}: ${command}`);
             
-            // Локальное обновление
+            // Локально обновляем индикатор
             this.updateLedIndicator(command);
             
         } catch (error) {
-            console.error('❌ Ошибка отправки команды:', error);
-            alert('Ошибка отправки команды LED');
+            console.error('Ошибка отправки команды:', error);
+            alert('Ошибка отправки команды: ' + error.message);
         }
     }
 
@@ -138,11 +138,27 @@ class BLEManager {
         this.currentBeaconId = beaconId;
         console.log(`🎯 Активный маяк изменен на: ${beaconId}`);
         
-        // Обновляем отображение статуса LED для нового активного маяка
-        if (typeof updateLedStatus === 'function') {
-            updateLedStatus(beaconId, 'unknown'); // Сбрасываем статус
+        // Обновляем отображение для нового активного маяка
+        this.updateBeaconDisplay();
+    }
+
+    updateBeaconDisplay() {
+        // Обновляем координаты и статус для активного маяка
+        const lastPoints = HistoryManager.getAllBeaconsLastPoints();
+        const currentBeaconData = lastPoints[this.currentBeaconId];
+        
+        if (currentBeaconData) {
+            document.getElementById("beaconCoords").textContent = 
+                `${currentBeaconData.lat.toFixed(6)}, ${currentBeaconData.lon.toFixed(6)}`;
+        } else {
+            document.getElementById("beaconCoords").textContent = "N/A";
         }
-        this.updateLedIndicator('unknown');
+        
+        // Обновляем статус LED
+        if (typeof updateLedStatus === 'function') {
+            const currentStatus = window.beaconLedStatus ? window.beaconLedStatus[this.currentBeaconId] : 'unknown';
+            updateLedStatus(this.currentBeaconId, currentStatus);
+        }
     }
 
     disconnect() {
@@ -160,6 +176,7 @@ class BLEManager {
         this.ledCharacteristic = null;
         this.updateUI();
         
+        // Сбрасываем индикатор LED
         const ledStatusElement = document.getElementById("ledStatus");
         if (ledStatusElement) {
             ledStatusElement.innerHTML = '<span class="led-indicator"></span> ❓ ОТКЛЮЧЕНО';
@@ -183,10 +200,10 @@ class BLEManager {
     }
 }
 
-// Глобальный экземпляр
+// Глобальный экземпляр BLE менеджера
 const bleManager = new BLEManager();
 
-// Глобальные функции
+// Глобальные функции для HTML
 function connectBLE() {
     bleManager.connect();
 }
