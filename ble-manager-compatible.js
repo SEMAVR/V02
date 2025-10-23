@@ -70,39 +70,42 @@ class BLEManager {
         }
     }
 
-    handleCoordData(event) {
-        const value = event.target.value;
-        const decoder = new TextDecoder('utf-8');
-        const dataString = decoder.decode(value);
+// В файле ble-manager-compatible.js, в функции handleCoordData, добавьте:
+handleCoordData(event) {
+    const value = event.target.value;
+    const decoder = new TextDecoder('utf-8');
+    const dataString = decoder.decode(value);
+    
+    console.log('📊 Получены данные:', dataString);
+    
+    const parts = dataString.split(',');
+    if (parts.length >= 5) {
+        const beaconId = parseInt(parts[0]);
+        const lat = parseFloat(parts[1]);
+        const lon = parseFloat(parts[2]);
+        const speed = parseFloat(parts[3]);
+        const ledState = parseInt(parts[4]);
         
-        console.log('📊 Получены данные:', dataString);
+        // Сохраняем состояние LED
+        this.lastLedState = ledState;
         
-        const parts = dataString.split(',');
-        if (parts.length >= 5) {
-            const beaconId = parseInt(parts[0]);
-            const lat = parseFloat(parts[1]);
-            const lon = parseFloat(parts[2]);
-            const speed = parseFloat(parts[3]);
-            const ledState = parseInt(parts[4]);
-            
-            // Проверяем pending команды
-            this.checkPendingCommand(beaconId, ledState);
-            
-            // Сохраняем состояние LED
-            this.lastLedState = ledState;
-            
-            if (typeof updateBeacon === 'function') {
-                updateBeacon(beaconId, lat, lon, speed);
-            }
-            
-            // Обновляем UI если это активный маяк
-            if (beaconId === window.currentBeaconId) {
-                document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-                document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
-                this.updateLedIndicator(ledState);
-            }
+        if (typeof updateBeacon === 'function') {
+            updateBeacon(beaconId, lat, lon, speed);
+        }
+        
+        // ОБНОВЛЕНИЕ: Вызываем функцию обновления статуса LED
+        if (typeof updateLedStatus === 'function') {
+            updateLedStatus(beaconId, ledState);
+        }
+        
+        // Обновляем UI если это активный маяк
+        if (beaconId === window.currentBeaconId) {
+            document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+            document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
+            this.updateLedIndicator(ledState);
         }
     }
+}
 
     // Проверка pending команд
     checkPendingCommand(beaconId, actualLedState) {
