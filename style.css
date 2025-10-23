@@ -85,89 +85,6 @@ header h1 {
   font-weight: normal;
 }
 
-/* Стили для компактного отображения статусов маяков */
-.beacons-status-compact {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.beacon-status-compact-item {
-  display: flex;
-  align-items: center;
-  padding: 3px 8px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.05);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid var(--border-color);
-  min-width: 24px;
-  justify-content: center;
-}
-
-.dark .beacon-status-compact-item {
-  background: rgba(255,255,255,0.1);
-}
-
-.beacon-status-compact-item:hover {
-  background: rgba(0,0,0,0.08);
-  transform: translateY(-1px);
-}
-
-.dark .beacon-status-compact-item:hover {
-  background: rgba(255,255,255,0.15);
-}
-
-.beacon-status-compact-item.active {
-  background: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-.beacon-compact-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 4px;
-  border: 1px solid currentColor;
-  transition: all 0.3s ease;
-}
-
-.beacon-online .beacon-compact-indicator {
-  background-color: #4caf50;
-  box-shadow: 0 0 4px #4caf50;
-}
-
-.beacon-offline .beacon-compact-indicator {
-  background-color: #f44336;
-}
-
-.beacon-unknown .beacon-compact-indicator {
-  background-color: #ff9800;
-  animation: pulse 2s infinite;
-}
-
-/* Цвета для разных маяков в компактном виде */
-.beacon-status-compact-item.beacon-0 .beacon-compact-indicator { border-color: #ff4444; }
-.beacon-status-compact-item.beacon-1 .beacon-compact-indicator { border-color: #44ff44; }
-.beacon-status-compact-item.beacon-2 .beacon-compact-indicator { border-color: #4444ff; }
-.beacon-status-compact-item.beacon-3 .beacon-compact-indicator { border-color: #ffff44; }
-.beacon-status-compact-item.beacon-4 .beacon-compact-indicator { border-color: #ff44ff; }
-.beacon-status-compact-item.beacon-5 .beacon-compact-indicator { border-color: #44ffff; }
-.beacon-status-compact-item.beacon-6 .beacon-compact-indicator { border-color: #ff8844; }
-.beacon-status-compact-item.beacon-7 .beacon-compact-indicator { border-color: #8844ff; }
-
-.beacon-status-compact-item.active.beacon-0 { background: #ff4444; }
-.beacon-status-compact-item.active.beacon-1 { background: #44ff44; }
-.beacon-status-compact-item.active.beacon-2 { background: #4444ff; }
-.beacon-status-compact-item.active.beacon-3 { background: #ffff44; color: #333; }
-.beacon-status-compact-item.active.beacon-4 { background: #ff44ff; }
-.beacon-status-compact-item.active.beacon-5 { background: #44ffff; color: #333; }
-.beacon-status-compact-item.active.beacon-6 { background: #ff8844; }
-.beacon-status-compact-item.active.beacon-7 { background: #8844ff; }
-
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -392,11 +309,6 @@ button:active {
     justify-content: space-between;
   }
   
-  .beacons-status-compact {
-    justify-content: flex-start;
-    gap: 3px;
-  }
-  
   button {
     min-width: auto;
   }
@@ -447,18 +359,6 @@ button:active {
     font-size: 14px;
   }
   
-  .beacon-status-compact-item {
-    font-size: 11px;
-    padding: 2px 6px;
-    min-width: 20px;
-  }
-  
-  .beacon-compact-indicator {
-    width: 6px;
-    height: 6px;
-    margin-right: 3px;
-  }
-  
   .led-status {
     font-size: 14px;
     padding: 3px 10px;
@@ -483,12 +383,4 @@ button:active {
 
 #exportGPX:hover, #exportCSV:hover {
   background: #218838;
-}
-
-/* Убираем старые стили для статуса маяков */
-.beacons-status,
-.beacons-grid,
-.beacon-status-item,
-.beacon-indicator {
-  display: none;
 }
