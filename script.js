@@ -208,29 +208,40 @@ function updateLedStatusDisplay(ledState) {
 }
 
 function updateDistanceToBeacon() {
-    const lastPoints = HistoryManager.getAllBeaconsLastPoints();
-    const currentBeaconId = bleManager.currentBeaconId;
-    const currentBeaconData = lastPoints[currentBeaconId];
+  const lastPoints = HistoryManager.getAllBeaconsLastPoints();
+  const currentBeaconId = bleManager.currentBeaconId;
+  const currentBeaconData = lastPoints[currentBeaconId];
+  
+  if (currentBeaconData && myMarker) {
+    const myLatLng = myMarker.getLatLng();
+    const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
     
-    if (currentBeaconData && myMarker) {
-        const myLatLng = myMarker.getLatLng();
-        const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
-        document.getElementById("distance").textContent = `${distance.toFixed(2)} км`;
+    // Форматируем расстояние
+    let distanceText;
+    if (distance < 1.0) {
+      // Меньше 1 км - показываем в метрах
+      distanceText = `${Math.round(distance * 1000)} м`;
     } else {
-        document.getElementById("distance").textContent = "N/A";
+      // 1 км и больше - показываем в км с одним decimal
+      distanceText = `${distance.toFixed(1)} км`;
     }
+    
+    document.getElementById("distance").textContent = distanceText;
+  } else {
+    document.getElementById("distance").textContent = "N/A";
+  }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
+  const R = 6371; // Радиус Земли в км
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c; // Возвращает расстояние в километрах
 }
 
 // Функции истории (оставляем без изменений)
