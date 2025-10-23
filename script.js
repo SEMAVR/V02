@@ -56,12 +56,11 @@ function initializeBeaconsStatus() {
   
   for (let i = 0; i < 8; i++) {
     const beaconElement = document.createElement('div');
-    beaconElement.className = 'beacon-status-item';
+    beaconElement.className = 'beacon-status-compact-item';
     beaconElement.dataset.beaconId = i;
     beaconElement.innerHTML = `
-      <div class="beacon-indicator beacon-unknown"></div>
-      <div>Маяк ${i}</div>
-      <small>N/A</small>
+      <div class="beacon-compact-indicator beacon-unknown"></div>
+      <div>${i}</div>
     `;
     
     beaconElement.addEventListener('click', () => {
