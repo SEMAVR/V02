@@ -29,7 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupEventListeners();
   loadSettings();
   checkGeolocationSupport();
-  initializeBeaconsStatus();
 });
 
 function initializeMap() {
@@ -48,42 +47,9 @@ function initializeMap() {
   }).addTo(map);
 }
 
-function initializeBeaconsStatus() {
-  const container = document.getElementById('beaconsStatus');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  
-  for (let i = 0; i < 8; i++) {
-    const beaconElement = document.createElement('div');
-    beaconElement.className = 'beacon-status-compact-item';
-    beaconElement.dataset.beaconId = i;
-    beaconElement.innerHTML = `
-      <div class="beacon-compact-indicator beacon-unknown"></div>
-      <div>${i}</div>
-    `;
-    
-    beaconElement.addEventListener('click', () => {
-      switchBeacon(i);
-    });
-    
-    container.appendChild(beaconElement);
-  }
-}
-
 function switchBeacon(beaconId) {
   currentBeaconId = beaconId;
   document.getElementById('beaconSelect').value = beaconId;
-  
-  // Обновляем активный класс
-  document.querySelectorAll('.beacon-status-item').forEach(item => {
-    if (parseInt(item.dataset.beaconId) === beaconId) {
-      item.classList.add('active');
-    } else {
-      item.classList.remove('active');
-    }
-  });
-  
   updateBeaconDisplay();
   updateLedStatusDisplay(); // Обновляем отображение статуса LED
 }
@@ -229,9 +195,6 @@ function updateBeacon(beaconId, lat, lon, speed = null) {
   // Добавление в историю
   HistoryManager.add(beaconId, lat, lon, speed);
   
-  // Обновление статуса маяка
-  updateBeaconStatus(beaconId, true);
-  
   // Если это активный маяк, обновляем отображение
   if (beaconId === currentBeaconId) {
     document.getElementById("beaconCoords").textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
@@ -252,9 +215,6 @@ function updateLedStatus(beaconId, ledStatus) {
   if (beaconId === currentBeaconId) {
     updateLedStatusDisplay();
   }
-  
-  // Обновляем индикатор статуса маяка
-  updateBeaconLedIndicator(beaconId, ledStatus);
 }
 
 // Функция: Обновление отображения статуса LED
@@ -288,56 +248,6 @@ function updateLedStatusDisplay() {
     default:
       ledStatusElement.innerHTML = '<span class="led-indicator"></span> ❓ НЕТ ДАННЫХ';
       ledStatusElement.classList.add('led-unknown');
-  }
-}
-
-// Функция: Обновление индикатора LED в статусе маяка
-function updateBeaconLedIndicator(beaconId, ledStatus) {
-  const beaconElement = document.querySelector(`.beacon-status-item[data-beacon-id="${beaconId}"]`);
-  if (!beaconElement) return;
-  
-  const indicator = beaconElement.querySelector('.beacon-indicator');
-  if (!indicator) return;
-  
-  // Обновляем цвет индикатора в зависимости от статуса LED
-  switch(ledStatus) {
-    case 0:
-    case '0':
-    case 'off':
-      indicator.style.backgroundColor = '#f44336'; // Красный
-      indicator.style.animation = 'none';
-      break;
-    case 1:
-    case '1':
-    case 'on':
-      indicator.style.backgroundColor = '#4caf50'; // Зеленый
-      indicator.style.animation = 'none';
-      break;
-    case 2:
-    case '2':
-    case 'blink':
-      indicator.style.backgroundColor = '#ffc107'; // Желтый
-      indicator.style.animation = 'blink 1s infinite';
-      break;
-    default:
-      indicator.style.backgroundColor = '#ff9800'; // Оранжевый
-      indicator.style.animation = 'pulse 2s infinite';
-  }
-}
-
-function updateBeaconStatus(beaconId, isOnline) {
-  const statusElement = document.querySelector(`.beacon-status-item[data-beacon-id="${beaconId}"]`);
-  if (!statusElement) return;
-  
-  const indicator = statusElement.querySelector('.beacon-indicator');
-  const timeText = statusElement.querySelector('small');
-  
-  if (isOnline) {
-    timeText.textContent = 'онлайн';
-    statusElement.classList.add(`beacon-${beaconId}`);
-  } else {
-    timeText.textContent = 'офлайн';
-    statusElement.classList.remove(`beacon-${beaconId}`);
   }
 }
 
@@ -380,9 +290,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
-
-// Остальные функции остаются без изменений...
-// [остальной код остается прежним]
 
 // Функции истории
 function showHistory() {
@@ -431,28 +338,34 @@ function showHistory() {
   showModal("historyModal");
 }
 
-// Экспорт в GPX формате
 function exportGPX() {
-  const gpx = HistoryManager.exportGPX();
+  const selectedBeacon = document.getElementById('historyBeaconSelect').value;
+  const gpx = HistoryManager.exportGPX(selectedBeacon);
   const blob = new Blob([gpx], { type: "application/gpx+xml;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `mayak_track_${new Date().toISOString().slice(0,10)}.gpx`;
+  const filename = selectedBeacon === 'all' 
+    ? `all_beacons_track_${new Date().toISOString().slice(0,10)}.gpx`
+    : `beacon_${selectedBeacon}_track_${new Date().toISOString().slice(0,10)}.gpx`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-// Экспорт в CSV формате
 function exportCSV() {
-  const csv = HistoryManager.exportCSV();
+  const selectedBeacon = document.getElementById('historyBeaconSelect').value;
+  const csv = HistoryManager.exportCSV(selectedBeacon);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `mayak_history_${new Date().toISOString().slice(0,10)}.csv`;
+  const filename = selectedBeacon === 'all' 
+    ? `all_beacons_history_${new Date().toISOString().slice(0,10)}.csv`
+    : `beacon_${selectedBeacon}_history_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -460,9 +373,9 @@ function exportCSV() {
 }
 
 function clearHistory() {
-  if (confirm("Вы уверены, что хотите очистить всю историю?")) {
-    HistoryManager.clear();
-    alert("История очищена");
+  if (confirm("Вы уверены, что хотите очистить историю активного маяка?")) {
+    HistoryManager.clear(currentBeaconId);
+    alert(`История маяка ${currentBeaconId} очищена`);
   }
 }
 
@@ -512,7 +425,6 @@ function openMap(service) {
 // Регистрация Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Используйте относительный путь
     navigator.serviceWorker.register('./service-worker.js')
       .then(registration => {
         console.log('SW registered: ', registration);
