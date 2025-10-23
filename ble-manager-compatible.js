@@ -137,15 +137,17 @@ class BLEManager {
 
         try {
             const command = state ? 1 : 0;
-            const beaconId = window.currentBeaconId || 0;
             
-            console.log(`💡 Отправка команды: маяк ${beaconId}, команда ${command}`);
+            // ВАЖНО: Получаем активный маяк из селектора
+            const beaconId = getCurrentBeaconId();
             
-            // ВАРИАНТ 1: Отправляем 2 байта [beaconId, command]
+            console.log(`💡 Отправка команды на АКТИВНЫЙ маяк ${beaconId}: команда ${command}`);
+            
+            // Отправляем 2 байта [beaconId, command]
             const value = new Uint8Array([beaconId, command]);
             
             await this.ledCharacteristic.writeValue(value);
-            console.log(`✅ Команда отправлена: [${beaconId}, ${command}]`);
+            console.log(`✅ Команда отправлена на маяк ${beaconId} (команда: ${command})`);
             
             // Временно обновляем индикатор
             this.updateLedIndicator(command);
@@ -202,6 +204,12 @@ class BLEManager {
 
 // Глобальный экземпляр
 const bleManager = new BLEManager();
+
+// Функция для получения текущего активного маяка
+function getCurrentBeaconId() {
+    const beaconSelect = document.getElementById('beaconSelect');
+    return beaconSelect ? parseInt(beaconSelect.value) : 0;
+}
 
 // Функции для приложения
 function connectBLE() {
