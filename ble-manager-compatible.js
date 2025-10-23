@@ -137,13 +137,15 @@ class BLEManager {
 
         try {
             const command = state ? 1 : 0;
-            
-            // ВАЖНО: Отправляем команду в формате [beaconId, command]
             const beaconId = window.currentBeaconId || 0;
+            
+            console.log(`💡 Отправка команды: маяк ${beaconId}, команда ${command}`);
+            
+            // ВАРИАНТ 1: Отправляем 2 байта [beaconId, command]
             const value = new Uint8Array([beaconId, command]);
             
             await this.ledCharacteristic.writeValue(value);
-            console.log(`💡 Команда LED отправлена: маяк ${beaconId}, команда ${command}`);
+            console.log(`✅ Команда отправлена: [${beaconId}, ${command}]`);
             
             // Временно обновляем индикатор
             this.updateLedIndicator(command);
@@ -154,7 +156,7 @@ class BLEManager {
             }
             
         } catch (error) {
-            console.error('Ошибка управления LED:', error);
+            console.error('❌ Ошибка отправки команды:', error);
             alert('Ошибка отправки команды LED: ' + error.message);
         }
     }
