@@ -6,101 +6,83 @@ class BLEManager {
         this.coordCharacteristic = null;
         this.ledCharacteristic = null;
         this.isConnected = false;
-        this.lastLedState = null;
+        this.currentBeaconId = 1; // По умолчанию маяк 1
     }
 
     async connect() {
         try {
             console.log('🔍 Поиск BLE устройств...');
             
-            let deviceOptions = {
+            this.device = await navigator.bluetooth.requestDevice({
                 filters: [{ name: 'ESP32-MultiTracker' }],
                 optionalServices: ['12345678-1234-1234-1234-123456789abc']
-            };
-            
-            this.device = await navigator.bluetooth.requestDevice(deviceOptions);
+            });
 
             console.log('📱 Устройство найдено:', this.device.name);
             
             this.device.addEventListener('gattserverdisconnected', () => {
-                console.log('🔌 BLE устройство отключено');
                 this.onDisconnected();
             });
 
-            console.log('🔄 Подключение к GATT серверу...');
             this.server = await this.device.gatt.connect();
-            console.log('✅ Подключено к GATT серверу');
-
-            console.log('🔄 Получение сервиса...');
             const service = await this.server.getPrimaryService('12345678-1234-1234-1234-123456789abc');
-            console.log('✅ Сервис найден');
 
-            console.log('🔄 Получение характеристики координат...');
+            // Характеристика координат
             this.coordCharacteristic = await service.getCharacteristic('12345678-1234-1234-1234-123456789abd');
             await this.coordCharacteristic.startNotifications();
             this.coordCharacteristic.addEventListener('characteristicvaluechanged', 
                 (event) => this.handleCoordData(event));
-            console.log('✅ Подписка на координаты');
 
-            console.log('🔄 Получение характеристики LED...');
+            // Характеристика LED
             this.ledCharacteristic = await service.getCharacteristic('12345678-1234-1234-1234-123456789abe');
-            console.log('✅ LED характеристика готова');
 
             this.isConnected = true;
             this.updateUI();
             
             console.log('🎉 BLE подключение установлено!');
-            alert('✅ Успешно подключено к многомаяковому устройству!');
-            
             return true;
 
         } catch (error) {
             console.error('❌ Ошибка BLE:', error);
-            
-            if (error.name === 'NotFoundError') {
-                alert('Устройство "ESP32-MultiTracker" не найдено.\n\nПопробуйте:\n1. Перезагрузить ESP32\n2. Проверить что BLE включен');
-            } else if (error.name === 'SecurityError') {
-                alert('Ошибка безопасности BLE.\n\nРазрешите доступ к Bluetooth в настройках браузера.');
-            } else {
-                alert('Ошибка подключения: ' + error.message);
-            }
+            alert('Ошибка подключения: ' + error.message);
             return false;
         }
     }
 
     handleCoordData(event) {
-        const value = event.target.value;
-        const decoder = new TextDecoder('utf-8');
-        const dataString = decoder.decode(value);
-        
-        console.log('📊 Получены данные:', dataString);
-        
-        const parts = dataString.split(',');
-        if (parts.length >= 5) {
-            const beaconId = parseInt(parts[0]);
-            const lat = parseFloat(parts[1]);
-            const lon = parseFloat(parts[2]);
-            const speed = parseFloat(parts[3]);
-            const ledState = parseInt(parts[4]);
+        try {
+            const value = event.target.value;
+            const dataString = new TextDecoder('utf-8').decode(value);
             
-            // Сохраняем состояние LED
-            this.lastLedState = ledState;
+            console.log('📊 Получены данные:', dataString);
             
-            if (typeof updateBeacon === 'function') {
-                updateBeacon(beaconId, lat, lon, speed);
+            const parts = dataString.split(',');
+            if (parts.length >= 5) {
+                const beaconId = parseInt(parts[0]);
+                const lat = parseFloat(parts[1]);
+                const lon = parseFloat(parts[2]);
+                const speed = parseFloat(parts[3]);
+                const ledState = parseInt(parts[4]);
+
+                // Обновляем данные маяка
+                if (typeof updateBeacon === 'function') {
+                    updateBeacon(beaconId, lat, lon, speed);
+                }
+
+                // Обновляем статус LED
+                if (typeof updateLedStatus === 'function') {
+                    updateLedStatus(beaconId, ledState);
+                }
+
+                // Если это активный маяк, обновляем UI
+                if (beaconId === this.currentBeaconId) {
+                    document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                    document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
+                    this.updateLedIndicator(ledState);
+                }
             }
-            
-            // ВАЖНО: Обновляем статус LED для активного маяка
-            if (beaconId === getCurrentBeaconId()) {
-                document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-                document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
-                this.updateLedIndicator(ledState);
-            }
-            
-            // Обновляем статус LED для всех маяков
-            if (typeof updateLedStatus === 'function') {
-                updateLedStatus(beaconId, ledState);
-            }
+        } catch (error) {
+            console.error('Ошибка обработки данных:', error);
         }
     }
 
@@ -129,38 +111,38 @@ class BLEManager {
         }
     }
 
-    async setLed(state) {
+    async sendLedCommand(command) {
         if (!this.ledCharacteristic || !this.isConnected) {
             alert('Сначала подключитесь к устройству');
             return;
         }
 
         try {
-            const command = state ? 1 : 0;
-            
-            // ВАЖНО: Получаем активный маяк из селектора
-            const beaconId = getCurrentBeaconId();
-            
-            console.log(`💡 Отправка команды на АКТИВНЫЙ маяк ${beaconId}: команда ${command}`);
-            
-            // Отправляем 2 байта [beaconId, command]
+            // Отправляем 2 байта: [beaconId, command]
+            const beaconId = this.currentBeaconId;
             const value = new Uint8Array([beaconId, command]);
             
             await this.ledCharacteristic.writeValue(value);
-            console.log(`✅ Команда отправлена на маяк ${beaconId} (команда: ${command})`);
+            console.log(`✅ Команда отправлена на маяк ${beaconId}: ${command}`);
             
-            // Временно обновляем индикатор
+            // Локальное обновление
             this.updateLedIndicator(command);
-            
-            // Сохраняем статус локально
-            if (typeof updateLedStatus === 'function') {
-                updateLedStatus(beaconId, command);
-            }
             
         } catch (error) {
             console.error('❌ Ошибка отправки команды:', error);
-            alert('Ошибка отправки команды LED: ' + error.message);
+            alert('Ошибка отправки команды LED');
         }
+    }
+
+    setActiveBeacon(beaconId) {
+        this.currentBeaconId = beaconId;
+        console.log(`🎯 Активный маяк изменен на: ${beaconId}`);
+        
+        // Обновляем отображение статуса LED для нового активного маяка
+        if (typeof updateLedStatus === 'function') {
+            updateLedStatus(beaconId, 'unknown'); // Сбрасываем статус
+        }
+        this.updateLedIndicator('unknown');
     }
 
     disconnect() {
@@ -176,7 +158,6 @@ class BLEManager {
         this.server = null;
         this.coordCharacteristic = null;
         this.ledCharacteristic = null;
-        this.lastLedState = null;
         this.updateUI();
         
         const ledStatusElement = document.getElementById("ledStatus");
@@ -205,29 +186,19 @@ class BLEManager {
 // Глобальный экземпляр
 const bleManager = new BLEManager();
 
-// Функция для получения текущего активного маяка
-function getCurrentBeaconId() {
-    const beaconSelect = document.getElementById('beaconSelect');
-    if (beaconSelect) {
-        const beaconId = parseInt(beaconSelect.value);
-        console.log(`🎯 Активный маяк из селектора: ${beaconId}`);
-        return beaconId;
-    }
-    console.log("⚠️ Селектор маяков не найден, используем маяк 0");
-    return 0;
-}
-
-// Функции для приложения
+// Глобальные функции
 function connectBLE() {
     bleManager.connect();
 }
 
 function setLedOn() {
-    console.log("🎯 Нажата кнопка LED Вкл для маяка:", getCurrentBeaconId());
-    bleManager.setLed(true);
+    bleManager.sendLedCommand(1);
 }
 
 function setLedOff() {
-    console.log("🎯 Нажата кнопка LED Выкл для маяка:", getCurrentBeaconId());
-    bleManager.setLed(false);
+    bleManager.sendLedCommand(0);
+}
+
+function switchBeacon(beaconId) {
+    bleManager.setActiveBeacon(beaconId);
 }
