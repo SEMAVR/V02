@@ -91,7 +91,7 @@ class BLEManager {
             }
             
             // ВАЖНО: Обновляем статус LED для активного маяка
-            if (beaconId === window.currentBeaconId) {
+            if (beaconId === getCurrentBeaconId()) {
                 document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
                 document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
                 this.updateLedIndicator(ledState);
@@ -208,7 +208,13 @@ const bleManager = new BLEManager();
 // Функция для получения текущего активного маяка
 function getCurrentBeaconId() {
     const beaconSelect = document.getElementById('beaconSelect');
-    return beaconSelect ? parseInt(beaconSelect.value) : 0;
+    if (beaconSelect) {
+        const beaconId = parseInt(beaconSelect.value);
+        console.log(`🎯 Активный маяк из селектора: ${beaconId}`);
+        return beaconId;
+    }
+    console.log("⚠️ Селектор маяков не найден, используем маяк 0");
+    return 0;
 }
 
 // Функции для приложения
@@ -217,9 +223,11 @@ function connectBLE() {
 }
 
 function setLedOn() {
+    console.log("🎯 Нажата кнопка LED Вкл для маяка:", getCurrentBeaconId());
     bleManager.setLed(true);
 }
 
 function setLedOff() {
+    console.log("🎯 Нажата кнопка LED Выкл для маяка:", getCurrentBeaconId());
     bleManager.setLed(false);
 }
