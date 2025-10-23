@@ -17,11 +17,16 @@ const beaconColors = [
   '#ff44ff', '#44ffff', '#ff8844', '#8844ff'
 ];
 
+// Хранилище статусов LED для всех маяков
+const beaconLedStatus = {
+  0: 'unknown', 1: 'unknown', 2: 'unknown', 3: 'unknown',
+  4: 'unknown', 5: 'unknown', 6: 'unknown', 7: 'unknown'
+};
+
 // Инициализация приложения
 document.addEventListener("DOMContentLoaded", () => {
   initializeMap();
   setupEventListeners();
-  setupCollapsiblePanels();
   loadSettings();
   checkGeolocationSupport();
   initializeBeaconsStatus();
@@ -43,18 +48,6 @@ function initializeMap() {
   }).addTo(map);
 }
 
-function setupCollapsiblePanels() {
-  const toggle = document.getElementById('beaconsStatusToggle');
-  const content = document.getElementById('beaconsStatusContainer');
-  
-  if (toggle && content) {
-    toggle.addEventListener('click', () => {
-      content.classList.toggle('hidden');
-      toggle.classList.toggle('expanded');
-    });
-  }
-}
-
 function initializeBeaconsStatus() {
   const container = document.getElementById('beaconsStatus');
   if (!container) return;
@@ -67,7 +60,8 @@ function initializeBeaconsStatus() {
     beaconElement.dataset.beaconId = i;
     beaconElement.innerHTML = `
       <div class="beacon-indicator beacon-unknown"></div>
-      <div>${i}</div>
+      <div>Маяк ${i}</div>
+      <small>N/A</small>
     `;
     
     beaconElement.addEventListener('click', () => {
@@ -92,6 +86,7 @@ function switchBeacon(beaconId) {
   });
   
   updateBeaconDisplay();
+  updateLedStatusDisplay(); // Обновляем отображение статуса LED
 }
 
 function setupEventListeners() {
@@ -244,17 +239,100 @@ function updateBeacon(beaconId, lat, lon, speed = null) {
   }
 }
 
+// НОВАЯ ФУНКЦИЯ: Обновление статуса LED на основе данных от маяка
+function updateLedStatus(beaconId, ledStatus) {
+  // Сохраняем статус LED для маяка
+  beaconLedStatus[beaconId] = ledStatus;
+  
+  // Если это активный маяк, обновляем отображение
+  if (beaconId === currentBeaconId) {
+    updateLedStatusDisplay();
+  }
+  
+  // Обновляем индикатор статуса маяка
+  updateBeaconLedIndicator(beaconId, ledStatus);
+}
+
+// НОВАЯ ФУНКЦИЯ: Обновление отображения статуса LED
+function updateLedStatusDisplay() {
+  const ledStatusElement = document.getElementById("ledStatus");
+  if (!ledStatusElement) return;
+  
+  const status = beaconLedStatus[currentBeaconId] || 'unknown';
+  
+  ledStatusElement.className = 'led-status';
+  
+  switch(status) {
+    case 0:
+    case '0':
+    case 'off':
+      ledStatusElement.innerHTML = '<span class="led-indicator"></span> 🔴 ВЫКЛ (0)';
+      ledStatusElement.classList.add('led-off');
+      break;
+    case 1:
+    case '1':
+    case 'on':
+      ledStatusElement.innerHTML = '<span class="led-indicator"></span> 🟢 ВКЛ (1)';
+      ledStatusElement.classList.add('led-on');
+      break;
+    case 2:
+    case '2':
+    case 'blink':
+      ledStatusElement.innerHTML = '<span class="led-indicator"></span> 🟡 МИГАНИЕ (2)';
+      ledStatusElement.classList.add('led-blink');
+      break;
+    default:
+      ledStatusElement.innerHTML = '<span class="led-indicator"></span> ❓ НЕТ ДАННЫХ';
+      ledStatusElement.classList.add('led-unknown');
+  }
+}
+
+// НОВАЯ ФУНКЦИЯ: Обновление индикатора LED в статусе маяка
+function updateBeaconLedIndicator(beaconId, ledStatus) {
+  const beaconElement = document.querySelector(`.beacon-status-item[data-beacon-id="${beaconId}"]`);
+  if (!beaconElement) return;
+  
+  const indicator = beaconElement.querySelector('.beacon-indicator');
+  if (!indicator) return;
+  
+  // Обновляем цвет индикатора в зависимости от статуса LED
+  switch(ledStatus) {
+    case 0:
+    case '0':
+    case 'off':
+      indicator.style.backgroundColor = '#f44336'; // Красный
+      break;
+    case 1:
+    case '1':
+    case 'on':
+      indicator.style.backgroundColor = '#4caf50'; // Зеленый
+      break;
+    case 2:
+    case '2':
+    case 'blink':
+      indicator.style.backgroundColor = '#ffc107'; // Желтый
+      indicator.style.animation = 'blink 1s infinite';
+      break;
+    default:
+      indicator.style.backgroundColor = '#ff9800'; // Оранжевый
+      indicator.style.animation = 'pulse 2s infinite';
+  }
+}
+
 function updateBeaconStatus(beaconId, isOnline) {
   const statusElement = document.querySelector(`.beacon-status-item[data-beacon-id="${beaconId}"]`);
   if (!statusElement) return;
   
   const indicator = statusElement.querySelector('.beacon-indicator');
+  const timeText = statusElement.querySelector('small');
   
   if (isOnline) {
     indicator.className = 'beacon-indicator beacon-online';
+    timeText.textContent = 'онлайн';
     statusElement.classList.add(`beacon-${beaconId}`);
   } else {
     indicator.className = 'beacon-indicator beacon-offline';
+    timeText.textContent = 'офлайн';
     statusElement.classList.remove(`beacon-${beaconId}`);
   }
 }
@@ -271,6 +349,7 @@ function updateBeaconDisplay() {
   }
   
   updateDistanceToBeacon();
+  updateLedStatusDisplay(); // Обновляем статус LED при переключении маяка
 }
 
 function updateDistanceToBeacon() {
@@ -279,24 +358,15 @@ function updateDistanceToBeacon() {
   
   if (currentBeaconData && myMarker) {
     const myLatLng = myMarker.getLatLng();
-    const distanceMeters = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
-    
-    // Форматируем вывод в зависимости от расстояния
-    let distanceText;
-    if (distanceMeters < 1000) {
-      distanceText = `${Math.round(distanceMeters)} м`;
-    } else {
-      distanceText = `${(distanceMeters / 1000).toFixed(2)} км`;
-    }
-    
-    document.getElementById("distance").textContent = distanceText;
+    const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
+    document.getElementById("distance").textContent = `${distance.toFixed(2)} км`;
   } else {
     document.getElementById("distance").textContent = "N/A";
   }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Радиус Земли в километрах
+  const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLon = (lon2 - lon1) * Math.PI / 180;
   const a = 
@@ -304,17 +374,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
     Math.sin(dLon/2) * Math.sin(dLon/2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  const distanceKm = R * c;
-  return distanceKm * 1000; // Конвертируем в метры
-}
-
-// Функции LED управления (ОБНОВЛЕННЫЕ)
-function setLedOn() {
-    bleManager.setLed(currentBeaconId, true);
-}
-
-function setLedOff() {
-    bleManager.setLed(currentBeaconId, false);
+  return R * c;
 }
 
 // Функции истории
