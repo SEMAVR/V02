@@ -167,6 +167,11 @@ function updateBeacon(beaconId, lat, lon, speed = null) {
     // Добавление в историю
     HistoryManager.add(beaconId, lat, lon, speed);
     
+    // Если это активный маяк, обновляем отображение координат с 5 знаками
+    if (beaconId === bleManager.currentBeaconId) {
+        document.getElementById("beaconCoords").textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    }
+    
     console.log(`📍 Маяк ${beaconId} обновлен: ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
 }
 
@@ -208,43 +213,43 @@ function updateLedStatusDisplay(ledState) {
 }
 
 function updateDistanceToBeacon() {
-  const lastPoints = HistoryManager.getAllBeaconsLastPoints();
-  const currentBeaconId = bleManager.currentBeaconId;
-  const currentBeaconData = lastPoints[currentBeaconId];
-  
-  if (currentBeaconData && myMarker) {
-    const myLatLng = myMarker.getLatLng();
-    const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
+    const lastPoints = HistoryManager.getAllBeaconsLastPoints();
+    const currentBeaconId = bleManager.currentBeaconId;
+    const currentBeaconData = lastPoints[currentBeaconId];
     
-    // Форматируем расстояние
-    let distanceText;
-    if (distance < 1.0) {
-      // Меньше 1 км - показываем в метрах
-      distanceText = `${Math.round(distance * 1000)} м`;
+    if (currentBeaconData && myMarker) {
+        const myLatLng = myMarker.getLatLng();
+        const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
+        
+        // Форматируем расстояние
+        let distanceText;
+        if (distance < 1.0) {
+            // Меньше 1 км - показываем в метрах
+            distanceText = `${Math.round(distance * 1000)} м`;
+        } else {
+            // 1 км и больше - показываем в км с одним decimal
+            distanceText = `${distance.toFixed(1)} км`;
+        }
+        
+        document.getElementById("distance").textContent = distanceText;
     } else {
-      // 1 км и больше - показываем в км с одним decimal
-      distanceText = `${distance.toFixed(1)} км`;
+        document.getElementById("distance").textContent = "N/A";
     }
-    
-    document.getElementById("distance").textContent = distanceText;
-  } else {
-    document.getElementById("distance").textContent = "N/A";
-  }
 }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Радиус Земли в км
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c; // Возвращает расстояние в километрах
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
 }
 
-// Функции истории (оставляем без изменений)
+// Функции истории
 function showHistory() {
     const selectedBeacon = document.getElementById('historyBeaconSelect').value;
     let history;
