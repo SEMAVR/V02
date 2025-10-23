@@ -20,22 +20,32 @@
     <div id="map"></div>
 
     <div id="dataPanel">
-      <!-- Выбор активного маяка -->
-      <div class="beacon-selector">
-        <span class="compact-data-label">Активный маяк:</span>
-        <select id="beaconSelect">
-          <option value="0">🔴 Маяк 0</option>
-          <option value="1">🟢 Маяк 1</option>
-          <option value="2">🔵 Маяк 2</option>
-          <option value="3">🟡 Маяк 3</option>
-          <option value="4">🟣 Маяк 4</option>
-          <option value="5">🟠 Маяк 5</option>
-          <option value="6">⚫ Маяк 6</option>
-          <option value="7">⚪ Маяк 7</option>
-        </select>
+      <!-- Активный маяк и статусы в одной строке -->
+      <div class="compact-data-row">
+        <div class="compact-data-item">
+          <span class="compact-data-label">Активный маяк:</span>
+          <select id="beaconSelect">
+            <option value="0">🔴 Маяк 0</option>
+            <option value="1">🟢 Маяк 1</option>
+            <option value="2">🔵 Маяк 2</option>
+            <option value="3">🟡 Маяк 3</option>
+            <option value="4">🟣 Маяк 4</option>
+            <option value="5">🟠 Маяк 5</option>
+            <option value="6">⚫ Маяк 6</option>
+            <option value="7">⚪ Маяк 7</option>
+          </select>
+        </div>
+        
+        <!-- Статусы маяков в одной строке -->
+        <div class="compact-data-item">
+          <span class="compact-data-label">Статусы:</span>
+          <div id="beaconsStatus" class="beacons-status-compact">
+            <!-- Заполняется JavaScript -->
+          </div>
+        </div>
       </div>
       
-      <!-- Данные активного маяка -->
+      <!-- Координаты активного маяка -->
       <div class="compact-data-row">
         <div class="compact-data-item">
           <span class="compact-data-label">Координаты:</span>
@@ -43,6 +53,7 @@
         </div>
       </div>
       
+      <!-- Мои данные -->
       <div class="compact-data-row">
         <div class="compact-data-item">
           <span class="compact-data-label">Моё местоположение:</span>
@@ -63,19 +74,6 @@
         <div class="compact-data-item">
           <span class="compact-data-label">Статус LED:</span>
           <span class="compact-data-value" id="ledStatus">❓ Неизвестно</span>
-        </div>
-      </div>
-
-      <!-- Сворачиваемая панель статуса маяков -->
-      <div class="beacons-status-collapsible">
-        <div class="collapsible-header" id="beaconsStatusToggle">
-          <span class="compact-data-label">Статус маяков</span>
-          <span class="toggle-arrow">▶</span>
-        </div>
-        <div id="beaconsStatusContainer" class="collapsible-content hidden">
-          <div id="beaconsStatus" class="beacons-grid">
-            <!-- Заполняется JavaScript -->
-          </div>
         </div>
       </div>
     </div>
