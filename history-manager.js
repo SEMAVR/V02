@@ -145,31 +145,47 @@ const HistoryManager = {
     return csv;
   },
 
-// В history-manager.js добавьте эту функцию если её нет
-getBeaconHistory(beaconId, count = 50) {
-  const history = this.load();
-  const beaconKey = `beacon_${beaconId}`;
-  return history[beaconKey] ? history[beaconKey].slice(-count) : [];
-},
+  // В history-manager.js добавьте эту функцию если её нет
+  getBeaconHistory(beaconId, count = 50) {
+    const history = this.load();
+    const beaconKey = `beacon_${beaconId}`;
+    return history[beaconKey] ? history[beaconKey].slice(-count) : [];
+  },
 
-// И если нет функции getAllHistory, добавьте:
-getAllHistory() {
-  const history = this.load();
-  const allPoints = [];
-  
-  for (let i = 0; i < 8; i++) {
-    const beaconKey = `beacon_${i}`;
-    if (history[beaconKey]) {
-      history[beaconKey].forEach(point => {
-        allPoints.push({
-          ...point,
-          beaconId: i
+  // И если нет функции getAllHistory, добавьте:
+  getAllHistory() {
+    const history = this.load();
+    const allPoints = [];
+    
+    for (let i = 0; i < 8; i++) {
+      const beaconKey = `beacon_${i}`;
+      if (history[beaconKey]) {
+        history[beaconKey].forEach(point => {
+          allPoints.push({
+            ...point,
+            beaconId: i
+          });
         });
-      });
+      }
     }
+    
+    // Сортируем по времени
+    return allPoints.sort((a, b) => a.time - b.time);
+  },
+
+  // Добавьте в HistoryManager после функции getAllHistory()
+  getAllBeaconsLastPoints() {
+    const history = this.load();
+    const lastPoints = {};
+    
+    for (let i = 0; i < 8; i++) {
+      const beaconKey = `beacon_${i}`;
+      if (history[beaconKey] && history[beaconKey].length > 0) {
+        // Берем последнюю точку из истории
+        lastPoints[i] = history[beaconKey][history[beaconKey].length - 1];
+      }
+    }
+    
+    return lastPoints;
   }
-  
-  // Сортируем по времени
-  return allPoints.sort((a, b) => a.time - b.time);
-}
 };
