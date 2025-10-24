@@ -62,10 +62,8 @@ async function initializeApp() {
 }
 
 function showLoading(show) {
-    // Можно добавить индикатор загрузки в UI
     if (show) {
         console.log("🔄 Инициализация приложения...");
-        // Дополнительно: показать спиннер в интерфейсе
         document.body.style.cursor = 'wait';
     } else {
         document.body.style.cursor = 'default';
@@ -88,7 +86,7 @@ function initializeMap() {
 }
 
 function setupEventListeners() {
-    // Восстанавливаем прямые обработчики для кнопок
+    // BLE кнопки
     document.getElementById("connectBtn").addEventListener("click", connectBLE);
     document.getElementById("ledOnBtn").addEventListener("click", setLedOn);
     document.getElementById("ledOffBtn").addEventListener("click", setLedOff);
@@ -133,7 +131,6 @@ async function checkGeolocationSupport() {
     }
 }
 
-// Найти эту функцию и заменить:
 function requestGeolocationPermission() {
     return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
@@ -562,34 +559,7 @@ function getMapServiceUrl(service, lat, lon) {
     return urls[service] || urls.google;
 }
 
-function switchBeacon(beaconId) {
-    try {
-        if (!isValidBeaconId(beaconId)) {
-            console.warn(`Invalid beacon ID for switch: ${beaconId}`);
-            return;
-        }
-        
-        // Обновление координат для нового маяка
-        const beaconHistory = HistoryManager.getBeaconHistory(beaconId, 1);
-        if (beaconHistory.length > 0) {
-            const lastPoint = beaconHistory[0];
-            document.getElementById("beaconCoords").textContent = 
-                `${lastPoint.lat.toFixed(5)}, ${lastPoint.lon.toFixed(5)}`;
-        } else {
-            document.getElementById("beaconCoords").textContent = "N/A";
-        }
-        
-        // Обновление LED статуса
-        const ledStatus = window.beaconLedStatus[beaconId] || BEACON_CONFIG.LED_STATES.UNKNOWN;
-        updateLedStatusDisplay(ledStatus);
-        
-        // Обновление расстояния
-        updateDistanceToBeacon();
-
-    } catch (error) {
-        console.error(`Error switching to beacon ${beaconId}:`, error);
-    }
-}
+// УДАЛЕНА функция switchBeacon - теперь используется из ble-manager-compatible.js
 
 // Утилитарные функции
 function showErrorToUser(message) {
@@ -614,15 +584,6 @@ function cleanup() {
         if (marker) map.removeLayer(marker);
     });
     beaconMarkers = {};
-}
-
-function loadSettings() {
-    // Заглушка - должна быть реализована
-    return {
-        showMyLocation: true,
-        autoFollow: true,
-        units: 'ms'
-    };
 }
 
 // Добавьте обработчик перед закрытием страницы
