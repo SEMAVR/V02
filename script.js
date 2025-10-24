@@ -12,9 +12,10 @@ const BEACON_CONFIG = {
 };
 
 const GEOLOCATION_CONFIG = {
-    enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 5000
+    enableHighAccuracy: true, // Включить GPS
+    timeout: 15000,
+    maximumAge: 0, // Не использовать кешированные данные
+    distanceFilter: 1 // Обновлять при перемещении на 1 метр
 };
 
 const MAP_CONFIG = {
@@ -46,10 +47,29 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function initializeApp() {
-    initializeMap();
-    setupEventListeners();
-    await loadSettings();
-    await checkGeolocationSupport();
+    try {
+        showLoading(true);
+        initializeMap();
+        setupEventListeners();
+        await loadSettings();
+        await checkGeolocationSupport();
+        showLoading(false);
+    } catch (error) {
+        showLoading(false);
+        console.error("Failed to initialize app:", error);
+        showErrorToUser("Ошибка запуска приложения");
+    }
+}
+
+function showLoading(show) {
+    // Можно добавить индикатор загрузки в UI
+    if (show) {
+        console.log("🔄 Инициализация приложения...");
+        // Дополнительно: показать спиннер в интерфейсе
+        document.body.style.cursor = 'wait';
+    } else {
+        document.body.style.cursor = 'default';
+    }
 }
 
 function initializeMap() {
@@ -564,7 +584,17 @@ function switchBeacon(beaconId) {
             return;
         }
         
-        // Обновление LED статуса для нового маяка
+        // Обновление координат для нового маяка
+        const beaconHistory = HistoryManager.getBeaconHistory(beaconId, 1);
+        if (beaconHistory.length > 0) {
+            const lastPoint = beaconHistory[0];
+            document.getElementById("beaconCoords").textContent = 
+                `${lastPoint.lat.toFixed(5)}, ${lastPoint.lon.toFixed(5)}`;
+        } else {
+            document.getElementById("beaconCoords").textContent = "N/A";
+        }
+        
+        // Обновление LED статуса
         const ledStatus = window.beaconLedStatus[beaconId] || BEACON_CONFIG.LED_STATES.UNKNOWN;
         updateLedStatusDisplay(ledStatus);
         
