@@ -76,7 +76,7 @@ class BLEManager {
 
                 // Если это активный маяк, обновляем UI
                 if (beaconId === this.currentBeaconId) {
-                    document.getElementById("beaconCoords").textContent = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                    document.getElementById("beaconCoords").textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
                     document.getElementById("speed").textContent = `${speed.toFixed(2)} км/ч`;
                     this.updateLedIndicator(ledState);
                 }
