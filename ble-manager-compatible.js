@@ -6,7 +6,7 @@ class BLEManager {
         this.coordCharacteristic = null;
         this.ledCharacteristic = null;
         this.isConnected = false;
-        this.currentBeaconId = 1; // По умолчанию маяк 1
+        this.currentBeaconId = 0; // По умолчанию маяк 0 (совпадает с select)
     }
 
     async connect() {
@@ -125,7 +125,7 @@ class BLEManager {
             await this.ledCharacteristic.writeValue(value);
             console.log(`✅ Команда отправлена на маяк ${beaconId}: ${command}`);
             
-            // Локально обновляем индикатор
+            // Локально обновляем индикатор только для активного маяка
             this.updateLedIndicator(command);
             
         } catch (error) {
@@ -140,25 +140,40 @@ class BLEManager {
         
         // Обновляем отображение для нового активного маяка
         this.updateBeaconDisplay();
+        
+        // Обновляем селектор в интерфейсе
+        const beaconSelect = document.getElementById("beaconSelect");
+        if (beaconSelect) {
+            beaconSelect.value = beaconId.toString();
+        }
     }
 
     updateBeaconDisplay() {
-        // Обновляем координаты и статус для активного маяка
-        const lastPoints = HistoryManager.getAllBeaconsLastPoints();
-        const currentBeaconData = lastPoints[this.currentBeaconId];
-        
-        if (currentBeaconData) {
+        // Обновляем координаты для активного маяка
+        const beaconHistory = HistoryManager.getBeaconHistory(this.currentBeaconId, 1);
+        if (beaconHistory.length > 0) {
+            const lastPoint = beaconHistory[0];
             document.getElementById("beaconCoords").textContent = 
-                `${currentBeaconData.lat.toFixed(6)}, ${currentBeaconData.lon.toFixed(6)}`;
+                `${lastPoint.lat.toFixed(5)}, ${lastPoint.lon.toFixed(5)}`;
         } else {
             document.getElementById("beaconCoords").textContent = "N/A";
         }
         
-        // Обновляем статус LED
-        if (typeof updateLedStatus === 'function') {
-            const currentStatus = window.beaconLedStatus ? window.beaconLedStatus[this.currentBeaconId] : 'unknown';
-            updateLedStatus(this.currentBeaconId, currentStatus);
+        // Обновляем статус LED для активного маяка
+        const currentStatus = window.beaconLedStatus ? window.beaconLedStatus[this.currentBeaconId] : 'unknown';
+        this.updateLedIndicator(this.ledStatusToNumber(currentStatus));
+        
+        // Обновляем расстояние
+        if (typeof updateDistanceToBeacon === 'function') {
+            updateDistanceToBeacon();
         }
+    }
+    
+    ledStatusToNumber(ledStatus) {
+        if (ledStatus === 'on' || ledStatus === 1) return 1;
+        if (ledStatus === 'off' || ledStatus === 0) return 0;
+        if (ledStatus === 'blinking' || ledStatus === 2) return 2;
+        return -1; // unknown
     }
 
     disconnect() {
@@ -204,7 +219,6 @@ class BLEManager {
 const bleManager = new BLEManager();
 
 // Глобальные функции для HTML
-
 function connectBLE() {
     bleManager.connect();
 }
