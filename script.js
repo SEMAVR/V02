@@ -255,7 +255,7 @@ function updateBeacon(beaconId, lat, lon, speed = null) {
             document.getElementById("beaconCoords").textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
         }
         
-        console.log(`📍 Маяк ${beaconId} обновлен: ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+        console.log(`📍 Маяк ${beaconId} обновлен: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
         
     } catch (error) {
         console.error(`Error updating beacon ${beaconId}:`, error);
