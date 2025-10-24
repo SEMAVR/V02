@@ -617,6 +617,7 @@ function cleanup() {
 }
 
 // Обработчики BLE функций (заглушки - должны быть реализованы в ble-manager.js)
+/*
 function connectBLE() {
     console.log("Connect BLE called");
     // Реализация в ble-manager.js
@@ -631,7 +632,7 @@ function setLedOff() {
     console.log("LED Off called");
     // Реализация в ble-manager.js
 }
-
+*/
 function loadSettings() {
     // Заглушка - должна быть реализована
     return {
