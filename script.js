@@ -88,49 +88,34 @@ function initializeMap() {
 }
 
 function setupEventListeners() {
-    // Делегирование событий для лучшей производительности
-    document.addEventListener('click', handleGlobalClick);
-    document.addEventListener('change', handleGlobalChange);
-}
+    // Восстанавливаем прямые обработчики для кнопок
+    document.getElementById("connectBtn").addEventListener("click", connectBLE);
+    document.getElementById("ledOnBtn").addEventListener("click", setLedOn);
+    document.getElementById("ledOffBtn").addEventListener("click", setLedOff);
+    document.getElementById("historyBtn").addEventListener("click", showHistory);
+    document.getElementById("openBtn").addEventListener("click", () => showModal("openModal"));
+    document.getElementById("settingsBtn").addEventListener("click", () => showModal("settingsModal"));
+    document.getElementById("clearHistoryBtn").addEventListener("click", clearHistory);
 
-function handleGlobalClick(e) {
-    const { target } = e;
-    
-    switch(target.id) {
-        case "connectBtn": connectBLE(); break;
-        case "ledOnBtn": setLedOn(); break;
-        case "ledOffBtn": setLedOff(); break;
-        case "historyBtn": showHistory(); break;
-        case "openBtn": showModal("openModal"); break;
-        case "settingsBtn": showModal("settingsModal"); break;
-        case "clearHistoryBtn": clearHistory(); break;
-        case "exportGPX": exportGPX(); break;
-        case "exportCSV": exportCSV(); break;
-        case "openGoogle": openMap("google"); break;
-        case "openYandex": openMap("yandex"); break;
-        case "open2gis": openMap("2gis"); break;
-        case "closeOpen": hideModal("openModal"); break;
-        case "closeHistory": hideModal("historyModal"); break;
-        case "closeSettings": hideModal("settingsModal"); break;
-    }
+    // Селектор маяка
+    document.getElementById("beaconSelect").addEventListener("change", (e) => {
+        const beaconId = parseInt(e.target.value);
+        switchBeacon(beaconId);
+    });
 
-    // Закрытие модальных окон
-    if (target.id === 'modalOverlay') {
-        hideAllModals();
-    }
-}
+    // Модальные окна
+    document.getElementById("closeOpen").addEventListener("click", () => hideModal("openModal"));
+    document.getElementById("closeHistory").addEventListener("click", () => hideModal("historyModal"));
+    document.getElementById("closeSettings").addEventListener("click", () => hideModal("settingsModal"));
+    document.getElementById("modalOverlay").addEventListener("click", hideAllModals);
 
-function handleGlobalChange(e) {
-    const { target } = e;
-    
-    switch(target.id) {
-        case "beaconSelect":
-            switchBeacon(parseInt(target.value));
-            break;
-        case "historyBeaconSelect":
-            showHistory();
-            break;
-    }
+    // Действия в модальных окнах
+    document.getElementById("exportGPX").addEventListener("click", exportGPX);
+    document.getElementById("exportCSV").addEventListener("click", exportCSV);
+    document.getElementById("historyBeaconSelect").addEventListener("change", showHistory);
+    document.getElementById("openGoogle").addEventListener("click", () => openMap("google"));
+    document.getElementById("openYandex").addEventListener("click", () => openMap("yandex"));
+    document.getElementById("open2gis").addEventListener("click", () => openMap("2gis"));
 }
 
 async function checkGeolocationSupport() {
