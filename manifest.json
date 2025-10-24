@@ -1,6 +1,6 @@
 {
-  "name": "Маяк Finder",
-  "short_name": "Маяк Finder",
+  "name": "Finder XUINDOR",
+  "short_name": "Finder XUINDOR",
   "description": "Приложение для отслеживания GPS маяков через LoRa и BLE",
   "start_url": "./",
   "display": "standalone",
