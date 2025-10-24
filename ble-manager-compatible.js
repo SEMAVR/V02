@@ -216,8 +216,7 @@ function setLedOn() {
 function setLedOff() {
     bleManager.sendLedCommand(0);
 }
-
+*/
 function switchBeacon(beaconId) {
     bleManager.setActiveBeacon(beaconId);
 }
-*/
