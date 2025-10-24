@@ -213,27 +213,46 @@ function updateLedStatusDisplay(ledState) {
 }
 
 function updateDistanceToBeacon() {
-    const lastPoints = HistoryManager.getAllBeaconsLastPoints();
-    const currentBeaconId = bleManager.currentBeaconId;
-    const currentBeaconData = lastPoints[currentBeaconId];
-    
-    if (currentBeaconData && myMarker) {
-        const myLatLng = myMarker.getLatLng();
-        const distance = calculateDistance(myLatLng.lat, myLatLng.lng, currentBeaconData.lat, currentBeaconData.lon);
+    try {
+        const currentBeaconId = parseInt(bleManager.currentBeaconId);
+        console.log("Calculating distance for beacon:", currentBeaconId);
         
-        // Форматируем расстояние
-        let distanceText;
-        if (distance < 1.0) {
-            // Меньше 1 км - показываем в метрах
-            distanceText = `${Math.round(distance * 1000)} м`;
+        // Получаем последнюю точку для текущего маяка
+        const beaconHistory = HistoryManager.getBeaconHistory(currentBeaconId, 1);
+        const lastPoint = beaconHistory.length > 0 ? beaconHistory[0] : null;
+        
+        if (lastPoint && myMarker) {
+            const myLatLng = myMarker.getLatLng();
+            console.log("My location:", myLatLng);
+            console.log("Beacon location:", lastPoint.lat, lastPoint.lon);
+            
+            const distance = calculateDistance(
+                myLatLng.lat, 
+                myLatLng.lng, 
+                lastPoint.lat, 
+                lastPoint.lon
+            );
+            
+            console.log("Calculated distance:", distance, "km");
+            
+            // Форматируем расстояние
+            let distanceText;
+            if (distance < 0.001) {
+                distanceText = "<1 м";
+            } else if (distance < 1.0) {
+                distanceText = `${Math.round(distance * 1000)} м`;
+            } else {
+                distanceText = `${distance.toFixed(1)} км`;
+            }
+            
+            document.getElementById("distance").textContent = distanceText;
         } else {
-            // 1 км и больше - показываем в км с одним decimal
-            distanceText = `${distance.toFixed(1)} км`;
+            console.log("No data:", {lastPoint, myMarker});
+            document.getElementById("distance").textContent = "N/A";
         }
-        
-        document.getElementById("distance").textContent = distanceText;
-    } else {
-        document.getElementById("distance").textContent = "N/A";
+    } catch (error) {
+        console.error("Error in updateDistanceToBeacon:", error);
+        document.getElementById("distance").textContent = "Ошибка";
     }
 }
 
