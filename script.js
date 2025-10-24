@@ -128,9 +128,18 @@ async function checkGeolocationSupport() {
     }
 }
 
+// Найти эту функцию и заменить:
 function requestGeolocationPermission() {
     return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        navigator.geolocation.getCurrentPosition(
+            resolve, 
+            reject, 
+            {
+                enableHighAccuracy: true, // Включаем GPS
+                timeout: 15000,
+                maximumAge: 0
+            }
+        );
     });
 }
 
