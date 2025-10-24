@@ -204,6 +204,7 @@ class BLEManager {
 const bleManager = new BLEManager();
 
 // Глобальные функции для HTML
+/*
 function connectBLE() {
     bleManager.connect();
 }
@@ -219,3 +220,4 @@ function setLedOff() {
 function switchBeacon(beaconId) {
     bleManager.setActiveBeacon(beaconId);
 }
+*/
