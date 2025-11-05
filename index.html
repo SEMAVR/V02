@@ -159,8 +159,32 @@
   <script src="ble-manager-compatible.js"></script>
   <script src="script.js"></script>
 
-  <!-- Инициализация кнопки вызова маяка -->
+  <!-- Инициализация кнопки вызова маяка + автоочистка -->
   <script>
+    // --- Очистка координат на экране ---
+    function clearBeaconDisplay() {
+      document.getElementById("beaconCoords").textContent = "N/A";
+      document.getElementById("myCoords").textContent = "N/A";
+      document.getElementById("distance").textContent = "N/A";
+      document.getElementById("speed").textContent = "N/A";
+      document.getElementById("ledStatus").textContent = "❓ Неизвестно";
+    }
+
+    // --- Автоматическая очистка при запуске приложения ---
+    window.addEventListener("load", () => {
+      clearBeaconDisplay();
+      console.log("🧹 Очистка данных при запуске");
+    });
+
+    // --- Очистка при переключении маяков ---
+    document.getElementById("beaconSelect").addEventListener("change", (e) => {
+      const newBeaconId = parseInt(e.target.value);
+      clearBeaconDisplay();
+      console.log("🧹 Очистка данных при переключении на маяк", newBeaconId);
+      if (typeof switchBeacon === "function") switchBeacon(newBeaconId);
+    });
+
+    // --- Кнопка вызова маяка ---
     document.getElementById('callBeaconBtn').addEventListener('click', callBeacon);
   </script>
 </body>
